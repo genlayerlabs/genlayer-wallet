@@ -180,7 +180,7 @@ const Index = () => {
         <Card
           content={{
             title: 'Test Snap',
-            description: '.',
+            description: 'Send a transaction.',
             button: <SendHelloButton onClick={handleRequestClick} />,
           }}
           // disabled={!installedSnap}

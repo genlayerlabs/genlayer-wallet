@@ -22,6 +22,18 @@ export const TransactionConfig: SnapComponent = () => {
           </Text>
         </Box>
         <Box direction="horizontal" alignment={'space-between'}>
+          <Text>Leader timeout:</Text>
+          <Text>~1 minute</Text>
+        </Box>
+        <Box direction="horizontal" alignment={'space-between'}>
+          <Text>Validator timeout:</Text>
+          <Text>~30 seconds</Text>
+        </Box>
+        <Box direction="horizontal" alignment={'space-between'}>
+          <Text>Appeal rounds:</Text>
+          <Text>2</Text>
+        </Box>
+        <Box direction="horizontal" alignment={'space-between'}>
           <Text>GenLayer storage cost:</Text>
           <Text>0.01 GEN</Text>
         </Box>
@@ -30,12 +42,8 @@ export const TransactionConfig: SnapComponent = () => {
           <Text>0.01 GEN</Text>
         </Box>
         <Box direction="horizontal" alignment={'space-between'}>
-          <Text>Leader timeout:</Text>
-          <Text>~1 minute</Text>
-        </Box>
-        <Box direction="horizontal" alignment={'space-between'}>
-          <Text>Validator timeout:</Text>
-          <Text>~30 seconds</Text>
+          <Text>Total messages fees:</Text>
+          <Text>0.9 GEN</Text>
         </Box>
         <Divider />
         <Text>
