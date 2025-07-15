@@ -4,8 +4,10 @@ import { UserInputEventType } from '@metamask/snaps-sdk';
 import { onTransaction, onUserInput } from '.';
 import type { AdvancedOptionsFormState } from './components';
 import { StateManager } from './libs/StateManager';
+import { getTransactionStorageKey } from './transactions/transaction';
 
 jest.mock('./libs/StateManager');
+jest.mock('./transactions/transaction');
 
 describe('Snap Handlers', () => {
   let snap: any;
@@ -22,16 +24,22 @@ describe('Snap Handlers', () => {
   });
 
   describe('onTransaction handler', () => {
-    it('should set currentTo and return the interface id', async () => {
-      const transaction = { to: '0x123456', value: '0xabc' };
+    it('should set currentStorageKey and return the interface id', async () => {
+      const transaction = { to: '0x123456', value: '0xabc', data: '0xa9059cbb00000000' };
+      const mockStorageKey = '0x123456_a9059cbb';
+      
+      (getTransactionStorageKey as jest.Mock).mockReturnValue(mockStorageKey);
       (StateManager.set as jest.Mock).mockResolvedValue(undefined);
       jest.spyOn(snap, 'request').mockResolvedValue('test-interface-id');
+      
       const result = await onTransaction({ transaction } as Parameters<
         typeof onTransaction
       >[0]);
+      
+      expect(getTransactionStorageKey).toHaveBeenCalledWith(transaction);
       expect(StateManager.set).toHaveBeenCalledWith(
-        'currentTo',
-        transaction.to,
+        'currentStorageKey',
+        mockStorageKey,
       );
       expect(result).toEqual({ id: 'test-interface-id' });
     });
@@ -40,6 +48,7 @@ describe('Snap Handlers', () => {
   describe('onUserInput handler', () => {
     it('should handle an InputChangeEvent for "number-of-appeals"', async () => {
       const interfaceId = 'interface-id-2';
+      const mockStorageKey = '0xabcdef_a9059cbb';
       const event = {
         type: UserInputEventType.InputChangeEvent,
         name: 'number-of-appeals',
@@ -48,10 +57,10 @@ describe('Snap Handlers', () => {
       const getMock = jest
         .spyOn(StateManager, 'get')
         .mockImplementation(async (key: string | undefined) => {
-          if (key === 'currentTo') {
-            return '0xABCDEF';
+          if (key === 'currentStorageKey') {
+            return mockStorageKey;
           }
-          if (key === '0xABCDEF') {
+          if (key === mockStorageKey) {
             return { 'number-of-appeals': '2' };
           }
           return {};
@@ -62,8 +71,8 @@ describe('Snap Handlers', () => {
       await onUserInput({ id: interfaceId, event } as Parameters<
         typeof onUserInput
       >[0]);
-      expect(getMock).toHaveBeenCalledWith('currentTo');
-      expect(getMock).toHaveBeenCalledWith('0xABCDEF');
+      expect(getMock).toHaveBeenCalledWith('currentStorageKey');
+      expect(getMock).toHaveBeenCalledWith(mockStorageKey);
       expect(requestMock).toHaveBeenCalledWith({
         method: 'snap_updateInterface',
         params: {
@@ -77,6 +86,7 @@ describe('Snap Handlers', () => {
 
     it('should handle a FormSubmitEvent for "advanced-options-form"', async () => {
       const interfaceId = 'interface-id-3';
+      const mockStorageKey = '0xabcdef_a9059cbb';
       const advancedOptionsData: AdvancedOptionsFormState = {
         'leader-timeout-input': '60',
         'validator-timeout-input': '30',
@@ -93,8 +103,8 @@ describe('Snap Handlers', () => {
       const getMock = jest
         .spyOn(StateManager, 'get')
         .mockImplementation(async (key: string | undefined) => {
-          if (key === 'currentTo') {
-            return '0xABCDEF';
+          if (key === 'currentStorageKey') {
+            return mockStorageKey;
           }
           return {};
         });
@@ -107,8 +117,8 @@ describe('Snap Handlers', () => {
       await onUserInput({ id: interfaceId, event } as unknown as Parameters<
         typeof onUserInput
       >[0]);
-      expect(getMock).toHaveBeenCalledWith('currentTo');
-      expect(setMock).toHaveBeenCalledWith('0xABCDEF', advancedOptionsData);
+      expect(getMock).toHaveBeenCalledWith('currentStorageKey');
+      expect(setMock).toHaveBeenCalledWith(mockStorageKey, advancedOptionsData);
       expect(requestMock).toHaveBeenCalledWith({
         method: 'snap_updateInterface',
         params: {
