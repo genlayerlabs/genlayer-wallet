@@ -14,6 +14,10 @@ export interface FeeConfig {
 
 /**
  * Fee configuration state for form components.
- * Uses Required utility type to make all properties required.
+ * JSON-compatible version of FeeConfig with all properties required.
  */
-export type FeeConfigState = Required<FeeConfig>; 
+export type FeeConfigState = {
+  [K in keyof FeeConfig]: string;
+} & {
+  [key: string]: string;
+}; 
