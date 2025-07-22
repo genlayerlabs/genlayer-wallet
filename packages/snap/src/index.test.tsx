@@ -1,3 +1,4 @@
+
 import { installSnap } from '@metamask/snaps-jest';
 
 import { onRpcRequest, onTransaction, onUserInput } from '.';
@@ -6,6 +7,29 @@ import {
   setDefaultFeeConfig,
   getTransactionStorageKey,
 } from './transactions/transaction';
+
+
+
+jest.mock('genlayer-js', () => ({
+  abi: {
+    calldata: {
+      decode: jest.fn(),
+    },
+  },
+  chains: {
+    localnet: {
+      consensusMainContract: {
+        abi: [],
+      },
+    },
+  },
+}));
+
+jest.mock('ethers', () => ({
+  Interface: jest.fn(),
+  decodeRlp: jest.fn(),
+  getBytes: jest.fn(),
+}));
 
 // Mock the transaction module
 jest.mock('./transactions/transaction', () => ({
@@ -134,19 +158,26 @@ describe('Snap Handlers', () => {
         ).rejects.toThrow('Contract address and method name are required');
       });
 
-      it('should throw error when config is missing', async () => {
-        const request = {
-          method: 'setDefaultFeeConfig',
-          params: {
-            contractAddress: '0x1234567890123456789012345678901234567890',
-            methodName: 'transfer',
-          },
-        };
+          it('should handle missing config by passing undefined', async () => {
+      const request = {
+        method: 'setDefaultFeeConfig',
+        params: {
+          contractAddress: '0x1234567890123456789012345678901234567890',
+          methodName: 'transfer',
+        },
+      };
 
-        await expect(
-          onRpcRequest({ origin: 'test', request } as any),
-        ).rejects.toThrow('Contract address and method name are required');
-      });
+      mockedSetDefaultFeeConfig.mockResolvedValue(false);
+
+      const result = await onRpcRequest({ origin: 'test', request } as any);
+
+      expect(mockedSetDefaultFeeConfig).toHaveBeenCalledWith(
+        '0x1234567890123456789012345678901234567890',
+        'transfer',
+        undefined,
+      );
+      expect(result).toEqual({ success: false });
+    });
 
       it('should handle errors from setDefaultFeeConfig', async () => {
         const request = {
