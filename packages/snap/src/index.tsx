@@ -5,14 +5,13 @@ import type {
 } from '@metamask/snaps-sdk';
 import { UserInputEventType } from '@metamask/snaps-sdk';
 
-import type { AdvancedOptionsFormState } from './components';
 import { AdvancedOptionsForm, TransactionConfig } from './components';
 import { StateManager } from './libs/StateManager';
 import { 
   getTransactionStorageKey,
   setDefaultFeeConfig,
-  type FeeConfig,
 } from './transactions/transaction';
+import type { FeeConfig, FeeConfigState } from './types';
 
 export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
   switch (request.method) {
@@ -87,7 +86,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
         // eslint-disable-next-line no-case-declarations
         const persistedData = (await StateManager.get(
           currentStorageKey,
-        )) as AdvancedOptionsFormState;
+        )) as FeeConfigState;
 
         await snap.request({
           method: 'snap_updateInterface',
@@ -108,7 +107,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     event.name === 'advanced-options-form'
   ) {
     const currentStorageKey = await StateManager.get('currentStorageKey');
-    const value = event.value as AdvancedOptionsFormState;
+    const value = event.value as FeeConfig;
     await StateManager.set(currentStorageKey, value);
 
     await snap.request({
