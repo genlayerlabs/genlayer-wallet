@@ -7,7 +7,7 @@ import { UserInputEventType } from '@metamask/snaps-sdk';
 
 import { AdvancedOptionsForm, TransactionConfig } from './components';
 import { StateManager } from './libs/StateManager';
-import { 
+import {
   getTransactionStorageKey,
   setDefaultFeeConfig,
 } from './transactions/transaction';
@@ -26,7 +26,11 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
         throw new Error('Contract address and method name are required');
       }
 
-      const wasSet = await setDefaultFeeConfig(contractAddress, methodName, config as FeeConfig);
+      const wasSet = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        config as FeeConfig,
+      );
       return { success: wasSet };
     }
 

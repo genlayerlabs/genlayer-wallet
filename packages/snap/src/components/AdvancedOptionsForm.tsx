@@ -20,7 +20,7 @@ export type AdvancedOptionsFormProps = {
 export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
   values,
 }) => {
-  const numberOfAppeals = parseInt(values['number-of-appeals'] || '1', 10);
+  const numberOfAppeals = parseInt(values['number-of-appeals'] ?? '1', 10);
   return (
     <Box>
       <Section>
@@ -29,7 +29,7 @@ export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
           <Field label="Number of Appeals">
             <Dropdown
               name="number-of-appeals"
-              value={values['number-of-appeals'] || ''}
+              value={values['number-of-appeals'] ?? ''}
             >
               <Option value="1">1</Option>
               <Option value="2">2</Option>
@@ -64,7 +64,7 @@ export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
               type={'number'}
               min={1}
               placeholder="60 Sec"
-              value={values['leader-timeout-input'] || ''}
+              value={values['leader-timeout-input'] ?? ''}
             />
           </Field>
           <Field label="Validator Timeout (seconds)">
@@ -73,7 +73,7 @@ export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
               type={'number'}
               min={1}
               placeholder="30 Sec"
-              value={values['validator-timeout-input'] || ''}
+              value={values['validator-timeout-input'] ?? ''}
             />
           </Field>
           <Field label="Max. Genlayer Storage (GEN)">
@@ -81,7 +81,7 @@ export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
               name="genlayer-storage-input"
               type={'number'}
               placeholder="12 GEN"
-              value={values['genlayer-storage-input'] || ''}
+              value={values['genlayer-storage-input'] ?? ''}
             />
           </Field>
           <Field label="Max. Rollup Storage (GEN)">
@@ -89,14 +89,14 @@ export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
               name="rollup-storage-input"
               type={'number'}
               placeholder="12 GEN"
-              value={values['rollup-storage-input'] || ''}
+              value={values['rollup-storage-input'] ?? ''}
             />
           </Field>
           <Field label="Message gas configuration">
             <Input
               name="message-gas-input"
               placeholder="JSON here (Editable)"
-              value={values['message-gas-input'] || ''}
+              value={values['message-gas-input'] ?? ''}
             />
           </Field>
           <Box direction={'horizontal'} alignment={'center'}>

@@ -9,8 +9,6 @@ import type { FeeConfig } from '../types';
  * Transaction handling and storage key generation.
  */
 
-
-
 /**
  * Extracts contract address and method name from GenLayer transaction data.
  * @param data - The transaction data (hex string).
@@ -122,7 +120,7 @@ export async function setDefaultFeeConfig(
   }
 
   const defaultConfig = {
-    ...config
+    ...config,
   };
 
   await StateManager.set(storageKey, defaultConfig);

@@ -1,8 +1,11 @@
 import { installSnap } from '@metamask/snaps-jest';
-import { setDefaultFeeConfig } from './transactions/transaction';
+
+import { onRpcRequest, onTransaction, onUserInput } from '.';
 import { StateManager } from './libs/StateManager';
-import { getTransactionStorageKey } from './transactions/transaction';
-import { onRpcRequest, onTransaction, onUserInput } from './index';
+import {
+  setDefaultFeeConfig,
+  getTransactionStorageKey,
+} from './transactions/transaction';
 
 // Mock the transaction module
 jest.mock('./transactions/transaction', () => ({
@@ -21,8 +24,13 @@ jest.mock('./libs/StateManager', () => ({
   },
 }));
 
-const mockedSetDefaultFeeConfig = setDefaultFeeConfig as jest.MockedFunction<typeof setDefaultFeeConfig>;
-const mockedGetTransactionStorageKey = getTransactionStorageKey as jest.MockedFunction<typeof getTransactionStorageKey>;
+const mockedSetDefaultFeeConfig = setDefaultFeeConfig as jest.MockedFunction<
+  typeof setDefaultFeeConfig
+>;
+const mockedGetTransactionStorageKey =
+  getTransactionStorageKey as jest.MockedFunction<
+    typeof getTransactionStorageKey
+  >;
 const mockedStateManager = StateManager as jest.Mocked<typeof StateManager>;
 
 describe('Snap Handlers', () => {
@@ -70,7 +78,7 @@ describe('Snap Handlers', () => {
             'leader-timeout-input': '60',
             'validator-timeout-input': '30',
             'number-of-appeals': '2',
-          }
+          },
         );
         expect(result).toEqual({ success: true });
       });
@@ -105,8 +113,9 @@ describe('Snap Handlers', () => {
           },
         };
 
-        await expect(onRpcRequest({ origin: 'test', request } as any))
-          .rejects.toThrow('Contract address and method name are required');
+        await expect(
+          onRpcRequest({ origin: 'test', request } as any),
+        ).rejects.toThrow('Contract address and method name are required');
       });
 
       it('should throw error when method name is missing', async () => {
@@ -120,8 +129,9 @@ describe('Snap Handlers', () => {
           },
         };
 
-        await expect(onRpcRequest({ origin: 'test', request } as any))
-          .rejects.toThrow('Contract address and method name are required');
+        await expect(
+          onRpcRequest({ origin: 'test', request } as any),
+        ).rejects.toThrow('Contract address and method name are required');
       });
 
       it('should throw error when config is missing', async () => {
@@ -133,8 +143,9 @@ describe('Snap Handlers', () => {
           },
         };
 
-        await expect(onRpcRequest({ origin: 'test', request } as any))
-          .rejects.toThrow('Contract address and method name are required');
+        await expect(
+          onRpcRequest({ origin: 'test', request } as any),
+        ).rejects.toThrow('Contract address and method name are required');
       });
 
       it('should handle errors from setDefaultFeeConfig', async () => {
@@ -151,8 +162,9 @@ describe('Snap Handlers', () => {
 
         mockedSetDefaultFeeConfig.mockRejectedValue(new Error('Storage error'));
 
-        await expect(onRpcRequest({ origin: 'test', request } as any))
-          .rejects.toThrow('Storage error');
+        await expect(
+          onRpcRequest({ origin: 'test', request } as any),
+        ).rejects.toThrow('Storage error');
       });
     });
 
@@ -162,8 +174,9 @@ describe('Snap Handlers', () => {
         params: {},
       };
 
-      await expect(onRpcRequest({ origin: 'test', request } as any))
-        .rejects.toThrow('Method not found: unknownMethod');
+      await expect(
+        onRpcRequest({ origin: 'test', request } as any),
+      ).rejects.toThrow('Method not found: unknownMethod');
     });
   });
 
@@ -211,7 +224,9 @@ describe('Snap Handlers', () => {
       await onUserInput({ id, event } as any);
 
       expect(mockedStateManager.get).toHaveBeenCalledWith('currentStorageKey');
-      expect(mockedStateManager.get).toHaveBeenCalledWith('current-storage-key');
+      expect(mockedStateManager.get).toHaveBeenCalledWith(
+        'current-storage-key',
+      );
       expect(snap.request).toHaveBeenCalledWith({
         method: 'snap_updateInterface',
         params: {
@@ -257,7 +272,9 @@ describe('Snap Handlers', () => {
       await onUserInput({ id, event } as any);
 
       expect(mockedStateManager.get).toHaveBeenCalledWith('currentStorageKey');
-      expect(mockedStateManager.get).toHaveBeenCalledWith('current-storage-key');
+      expect(mockedStateManager.get).toHaveBeenCalledWith(
+        'current-storage-key',
+      );
       expect(snap.request).toHaveBeenCalledWith({
         method: 'snap_updateInterface',
         params: {

@@ -1,5 +1,6 @@
 import { decodeRlp, getBytes } from 'ethers';
 
+import { StateManager } from '../libs/StateManager';
 import {
   extractMethodSelector,
   generateStorageKey,
@@ -7,7 +8,6 @@ import {
   parseGenLayerTransaction,
   setDefaultFeeConfig,
 } from './transaction';
-import { StateManager } from '../libs/StateManager';
 
 // Mock the genlayer-js and ethers dependencies
 jest.mock('genlayer-js', () => ({
@@ -42,19 +42,9 @@ jest.mock('../libs/StateManager', () => ({
 }));
 
 // Import and cast the mocked modules
-const { Interface: MockedInterface } = jest.requireMock('ethers') as {
-  Interface: jest.MockedClass<any>;
-  decodeRlp: jest.MockedFunction<typeof decodeRlp>;
-  getBytes: jest.MockedFunction<typeof getBytes>;
-};
+const { Interface: MockedInterface } = jest.requireMock('ethers');
 
-const { abi: mockedAbi } = jest.requireMock('genlayer-js') as {
-  abi: {
-    calldata: {
-      decode: jest.MockedFunction<any>;
-    };
-  };
-};
+const { abi: mockedAbi } = jest.requireMock('genlayer-js');
 
 const mockedDecodeRlp = decodeRlp as jest.MockedFunction<typeof decodeRlp>;
 const mockedGetBytes = getBytes as jest.MockedFunction<typeof getBytes>;
@@ -254,8 +244,6 @@ describe('Transaction Utilities', () => {
     });
   });
 
-
-
   describe('getTransactionStorageKey', () => {
     it('should generate storage key using GenLayer parsing', () => {
       const mockInterface = {
@@ -374,15 +362,19 @@ describe('Transaction Utilities', () => {
       mockedStateManager.get.mockResolvedValue(null);
       mockedStateManager.set.mockResolvedValue(undefined);
 
-      const result = await setDefaultFeeConfig(contractAddress, methodName, mockConfig);
+      const result = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        mockConfig,
+      );
 
       expect(result).toBe(true);
       expect(mockedStateManager.get).toHaveBeenCalledWith(
-        '0x1234567890123456789012345678901234567890_transfer'
+        '0x1234567890123456789012345678901234567890_transfer',
       );
       expect(mockedStateManager.set).toHaveBeenCalledWith(
         '0x1234567890123456789012345678901234567890_transfer',
-        mockConfig
+        mockConfig,
       );
     });
 
@@ -397,11 +389,15 @@ describe('Transaction Utilities', () => {
 
       mockedStateManager.get.mockResolvedValue(existingConfig);
 
-      const result = await setDefaultFeeConfig(contractAddress, methodName, mockConfig);
+      const result = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        mockConfig,
+      );
 
       expect(result).toBe(false);
       expect(mockedStateManager.get).toHaveBeenCalledWith(
-        '0x1234567890123456789012345678901234567890_transfer'
+        '0x1234567890123456789012345678901234567890_transfer',
       );
       expect(mockedStateManager.set).not.toHaveBeenCalled();
     });
@@ -413,15 +409,19 @@ describe('Transaction Utilities', () => {
       mockedStateManager.get.mockResolvedValue(null);
       mockedStateManager.set.mockResolvedValue(undefined);
 
-      const result = await setDefaultFeeConfig(contractAddress, methodName, mockConfig);
+      const result = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        mockConfig,
+      );
 
       expect(result).toBe(true);
       expect(mockedStateManager.get).toHaveBeenCalledWith(
-        '0x1234567890123456789012345678901234567890_transfer'
+        '0x1234567890123456789012345678901234567890_transfer',
       );
       expect(mockedStateManager.set).toHaveBeenCalledWith(
         '0x1234567890123456789012345678901234567890_transfer',
-        mockConfig
+        mockConfig,
       );
     });
 
@@ -429,16 +429,18 @@ describe('Transaction Utilities', () => {
       const contractAddress = '';
       const methodName = 'transfer';
 
-      await expect(setDefaultFeeConfig(contractAddress, methodName, mockConfig))
-        .rejects.toThrow('Contract address and method name are required');
+      await expect(
+        setDefaultFeeConfig(contractAddress, methodName, mockConfig),
+      ).rejects.toThrow('Contract address and method name are required');
     });
 
     it('should throw error when method name is missing', async () => {
       const contractAddress = '0x1234567890123456789012345678901234567890';
       const methodName = '';
 
-      await expect(setDefaultFeeConfig(contractAddress, methodName, mockConfig))
-        .rejects.toThrow('Contract address and method name are required');
+      await expect(
+        setDefaultFeeConfig(contractAddress, methodName, mockConfig),
+      ).rejects.toThrow('Contract address and method name are required');
     });
 
     it('should handle partial fee config', async () => {
@@ -452,12 +454,16 @@ describe('Transaction Utilities', () => {
       mockedStateManager.get.mockResolvedValue(null);
       mockedStateManager.set.mockResolvedValue(undefined);
 
-      const result = await setDefaultFeeConfig(contractAddress, methodName, partialConfig);
+      const result = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        partialConfig,
+      );
 
       expect(result).toBe(true);
       expect(mockedStateManager.set).toHaveBeenCalledWith(
         '0x1234567890123456789012345678901234567890_transfer',
-        partialConfig
+        partialConfig,
       );
     });
   });
