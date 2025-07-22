@@ -3,23 +3,11 @@ import { decodeRlp, getBytes, Interface } from 'ethers';
 import { abi, chains } from 'genlayer-js';
 
 import { StateManager } from '../libs/StateManager';
+import type { FeeConfig } from '../types';
 
 /**
  * Transaction handling and storage key generation.
  */
-
-/**
- * Fee configuration interface for contract methods.
- */
-export interface FeeConfig {
-  'leader-timeout-input'?: string;
-  'validator-timeout-input'?: string;
-  'genlayer-storage-input'?: string;
-  'rollup-storage-input'?: string;
-  'message-gas-input'?: string;
-  'number-of-appeals'?: string;
-  [key: string]: string | undefined;
-}
 
 
 
