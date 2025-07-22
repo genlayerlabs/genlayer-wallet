@@ -1,4 +1,15 @@
 // Mock modules before importing
+import { decodeRlp, getBytes } from 'ethers';
+
+import { StateManager } from '../libs/StateManager';
+import {
+  extractMethodSelector,
+  generateStorageKey,
+  getTransactionStorageKey,
+  parseGenLayerTransaction,
+  setDefaultFeeConfig,
+} from './transaction';
+
 jest.mock('genlayer-js', () => ({
   abi: {
     calldata: {
@@ -29,30 +40,10 @@ jest.mock('../libs/StateManager', () => ({
   },
 }));
 
-import { decodeRlp, getBytes } from 'ethers';
-import { StateManager } from '../libs/StateManager';
-import {
-  extractMethodSelector,
-  generateStorageKey,
-  getTransactionStorageKey,
-  parseGenLayerTransaction,
-  setDefaultFeeConfig,
-} from './transaction';
-
 // Import and cast the mocked modules
-const { Interface: MockedInterface } = jest.requireMock('ethers') as {
-  Interface: jest.MockedClass<any>;
-  decodeRlp: jest.MockedFunction<any>;
-  getBytes: jest.MockedFunction<any>;
-};
+const { Interface: MockedInterface } = jest.requireMock('ethers');
 
-const { abi: mockedAbi } = jest.requireMock('genlayer-js') as {
-  abi: {
-    calldata: {
-      decode: jest.MockedFunction<any>;
-    };
-  };
-};
+const { abi: mockedAbi } = jest.requireMock('genlayer-js');
 
 const mockedDecodeRlp = decodeRlp as jest.MockedFunction<any>;
 const mockedGetBytes = getBytes as jest.MockedFunction<any>;
