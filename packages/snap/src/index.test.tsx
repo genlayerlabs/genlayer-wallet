@@ -25,17 +25,21 @@ describe('Snap Handlers', () => {
 
   describe('onTransaction handler', () => {
     it('should set currentStorageKey and return the interface id', async () => {
-      const transaction = { to: '0x123456', value: '0xabc', data: '0xa9059cbb00000000' };
+      const transaction = {
+        to: '0x123456',
+        value: '0xabc',
+        data: '0xa9059cbb00000000',
+      };
       const mockStorageKey = '0x123456_a9059cbb';
-      
+
       (getTransactionStorageKey as jest.Mock).mockReturnValue(mockStorageKey);
       (StateManager.set as jest.Mock).mockResolvedValue(undefined);
       jest.spyOn(snap, 'request').mockResolvedValue('test-interface-id');
-      
+
       const result = await onTransaction({ transaction } as Parameters<
         typeof onTransaction
       >[0]);
-      
+
       expect(getTransactionStorageKey).toHaveBeenCalledWith(transaction);
       expect(StateManager.set).toHaveBeenCalledWith(
         'currentStorageKey',

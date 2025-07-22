@@ -32,7 +32,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     const currentStorageKey = await StateManager.get('currentStorageKey');
     const persistedData = (await StateManager.get(currentStorageKey)) || {};
     persistedData['number-of-appeals'] = event.value as string;
-    
+
     await snap.request({
       method: 'snap_updateInterface',
       params: {
@@ -41,7 +41,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
       },
     });
   }
-  
+
   if (event.type === UserInputEventType.ButtonClickEvent) {
     switch (event.name) {
       case 'cancel_config':
@@ -61,7 +61,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
         const persistedData = (await StateManager.get(
           currentStorageKey,
         )) as AdvancedOptionsFormState;
-        
+
         await snap.request({
           method: 'snap_updateInterface',
           params: {
@@ -83,7 +83,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     const currentStorageKey = await StateManager.get('currentStorageKey');
     const value = event.value as AdvancedOptionsFormState;
     await StateManager.set(currentStorageKey, value);
-    
+
     await snap.request({
       method: 'snap_updateInterface',
       params: {
