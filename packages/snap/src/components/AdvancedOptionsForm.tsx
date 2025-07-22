@@ -11,18 +11,10 @@ import {
   Option,
 } from '@metamask/snaps-sdk/jsx';
 
-export type AdvancedOptionsFormState = {
-  'leader-timeout-input': string;
-  'validator-timeout-input': string;
-  'genlayer-storage-input': string;
-  'rollup-storage-input': string;
-  'message-gas-input': string;
-  'number-of-appeals': string;
-  [key: string]: string;
-};
+import type { FeeConfigState } from '../types';
 
 export type AdvancedOptionsFormProps = {
-  values: AdvancedOptionsFormState;
+  values: FeeConfigState;
 };
 
 export const AdvancedOptionsForm: SnapComponent<AdvancedOptionsFormProps> = ({
