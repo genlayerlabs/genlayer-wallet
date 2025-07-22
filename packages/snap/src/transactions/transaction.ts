@@ -68,7 +68,7 @@ export function generateStorageKey(
   contractAddress: string,
   methodSelector: string,
 ): string {
-  const normalizedAddress = contractAddress?.toLowerCase() ?? 'default';
+  const normalizedAddress = contractAddress?.toLowerCase() || 'default';
   const compositeKey = `${normalizedAddress}_${methodSelector}`;
 
   return compositeKey;

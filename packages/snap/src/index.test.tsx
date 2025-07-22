@@ -1,3 +1,4 @@
+// Mock modules before importing
 import { installSnap } from '@metamask/snaps-jest';
 import { UserInputEventType } from '@metamask/snaps-sdk';
 
@@ -5,6 +6,27 @@ import { onTransaction, onUserInput } from '.';
 import type { AdvancedOptionsFormState } from './components';
 import { StateManager } from './libs/StateManager';
 import { getTransactionStorageKey } from './transactions/transaction';
+
+jest.mock('genlayer-js', () => ({
+  abi: {
+    calldata: {
+      decode: jest.fn(),
+    },
+  },
+  chains: {
+    localnet: {
+      consensusMainContract: {
+        abi: [],
+      },
+    },
+  },
+}));
+
+jest.mock('ethers', () => ({
+  Interface: jest.fn(),
+  decodeRlp: jest.fn(),
+  getBytes: jest.fn(),
+}));
 
 jest.mock('./libs/StateManager');
 jest.mock('./transactions/transaction');
