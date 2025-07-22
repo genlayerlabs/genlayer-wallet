@@ -1,3 +1,4 @@
+// Mock modules before importing
 import { installSnap } from '@metamask/snaps-jest';
 
 import { onRpcRequest, onTransaction, onUserInput } from '.';
