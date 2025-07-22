@@ -38,7 +38,7 @@ export function parseGenLayerTransaction(data: string): {
     };
 
     return result;
-  } catch (error) {
+  } catch {
     const result = {
       contractAddress: 'default',
       methodName: 'unknown',
