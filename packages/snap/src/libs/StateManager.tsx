@@ -6,8 +6,7 @@ export class StateManager {
       method: 'snap_manageState',
       params: { operation: 'get' },
     })) as Record<string, any> | null;
-
-    return state && key in state ? state[key] : undefined;
+    return state && key in state ? state[key] : null;
   }
 
   static async set(key: string, value: any): Promise<void> {
