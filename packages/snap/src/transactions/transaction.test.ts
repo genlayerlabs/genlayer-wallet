@@ -222,10 +222,10 @@ describe('Transaction Utilities', () => {
     });
 
     it('should handle uppercase contract address by converting to lowercase', () => {
-      const contractAddress = '0X1234567890123456789012345678901234567890';
+      const contractAddress = '0xc361Fc33b99F88612257ac8cC2d852A5CEe0E217';
       const methodName = 'approve';
       const result = generateStorageKey(contractAddress, methodName);
-      expect(result).toBe('0x1234567890123456789012345678901234567890_approve');
+      expect(result).toBe('0xc361fc33b99f88612257ac8cc2d852a5cee0e217_approve');
     });
 
     it('should use "default" for undefined contract address', () => {
