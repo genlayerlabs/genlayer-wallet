@@ -31,9 +31,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC trusted publishing
         run: npm install -g npm@latest
+
+      - name: Strip legacy token for OIDC auth
+        run: sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
 
       - name: Install dependencies
         run: yarn workspaces focus genlayer-wallet-plugin
