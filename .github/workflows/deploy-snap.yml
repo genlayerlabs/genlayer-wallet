@@ -1,7 +1,16 @@
-name: Deploy Snap Production
+name: Deploy Snap
 
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - beta
 
 jobs:
   deploy:
@@ -55,9 +64,15 @@ jobs:
           tag_name: 'v${{ env.VERSION }}'
           name: 'Release v${{ env.VERSION }}'
           body: 'Automated release for version v${{ env.VERSION }}'
+          prerelease: ${{ inputs.channel == 'beta' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to npm
         working-directory: packages/snap
-        run: npm publish --provenance --access public
+        run: |
+          if [ "${{ inputs.channel }}" = "beta" ]; then
+            npm publish --provenance --tag beta --access public
+          else
+            npm publish --provenance --access public
+          fi
