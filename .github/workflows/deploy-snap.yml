@@ -36,6 +36,11 @@ jobs:
       - name: Upgrade npm for OIDC trusted publishing
         run: npm install -g npm@latest
 
+      - name: Configure OIDC auth
+        run: |
+          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          unset NODE_AUTH_TOKEN
+
       - name: Install dependencies
         run: yarn workspaces focus genlayer-wallet-plugin
 
@@ -73,9 +78,9 @@ jobs:
 
       - name: Publish to npm
         working-directory: packages/snap
-        env:
-          NODE_AUTH_TOKEN: ""
         run: |
+          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          unset NODE_AUTH_TOKEN
           if [ "${{ inputs.channel }}" = "beta" ]; then
             npm publish --provenance --tag beta --access public
           else

@@ -4,7 +4,7 @@
   "description": "Adds new GenLayer blockchain functionalities, such as rotations, appeals, and more.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yeagerai/genlayer-wallet.git"
+    "url": "https://github.com/genlayerlabs/genlayer-wallet.git"
   },
   "main": "./dist/bundle.js",
   "files": [
