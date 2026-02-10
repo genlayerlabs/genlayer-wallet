@@ -1,7 +1,16 @@
-name: Deploy Snap Production
+name: Deploy Snap
 
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - beta
 
 jobs:
   deploy:
@@ -9,18 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: yarn workspaces focus genlayer-wallet-plugin
@@ -53,10 +64,15 @@ jobs:
           tag_name: 'v${{ env.VERSION }}'
           name: 'Release v${{ env.VERSION }}'
           body: 'Automated release for version v${{ env.VERSION }}'
+          prerelease: ${{ inputs.channel == 'beta' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to npm
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-        run: yarn workspace genlayer-wallet-plugin npm publish --access public
+        working-directory: packages/snap
+        run: |
+          if [ "${{ inputs.channel }}" = "beta" ]; then
+            npm publish --provenance --tag beta --access public
+          else
+            npm publish --provenance --access public
+          fi
