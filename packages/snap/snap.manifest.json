@@ -7,7 +7,7 @@
     "url": "https://github.com/yeagerai/genlayer-wallet.git"
   },
   "source": {
-    "shasum": "eY80XAM15OdmyAec7lzqcy7C3T6bQ611scgsLt6STec=",
+    "shasum": "juv32Btut0tfktPrqMa0kWMNU24SCROlArAiybo05KI=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -20,7 +20,11 @@
   "initialPermissions": {
     "snap_dialog": {},
     "endowment:transaction-insight": {},
-    "snap_manageState": {}
+    "snap_manageState": {},
+    "endowment:rpc": {
+      "dapps": true,
+      "snaps": false
+    }
   },
   "platformVersion": "6.14.0",
   "manifestVersion": "0.1"

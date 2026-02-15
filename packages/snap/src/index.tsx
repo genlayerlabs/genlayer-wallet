@@ -1,13 +1,43 @@
 import type {
+  OnRpcRequestHandler,
   OnTransactionHandler,
   OnUserInputHandler,
 } from '@metamask/snaps-sdk';
 import { UserInputEventType } from '@metamask/snaps-sdk';
 
-import type { AdvancedOptionsFormState } from './components';
 import { AdvancedOptionsForm, TransactionConfig } from './components';
 import { StateManager } from './libs/StateManager';
-import { getTransactionStorageKey } from './transactions/transaction';
+import {
+  getTransactionStorageKey,
+  setDefaultFeeConfig,
+} from './transactions/transaction';
+import type { FeeConfig, FeeConfigState } from './types';
+
+export const onRpcRequest: OnRpcRequestHandler = async ({ request }) => {
+  switch (request.method) {
+    case 'setDefaultFeeConfig': {
+      const { contractAddress, methodName, config } = request.params as {
+        contractAddress: string;
+        methodName: string;
+        config: Record<string, string>;
+      };
+
+      if (!contractAddress || !methodName) {
+        throw new Error('Contract address and method name are required');
+      }
+
+      const wasSet = await setDefaultFeeConfig(
+        contractAddress,
+        methodName,
+        config as FeeConfig,
+      );
+      return { success: wasSet };
+    }
+
+    default:
+      throw new Error(`Method not found: ${request.method}`);
+  }
+};
 
 export const onTransaction: OnTransactionHandler = async ({ transaction }) => {
   const storageKey = getTransactionStorageKey(transaction);
@@ -60,7 +90,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
         // eslint-disable-next-line no-case-declarations
         const persistedData = (await StateManager.get(
           currentStorageKey,
-        )) as AdvancedOptionsFormState;
+        )) as FeeConfigState;
 
         await snap.request({
           method: 'snap_updateInterface',
@@ -81,7 +111,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     event.name === 'advanced-options-form'
   ) {
     const currentStorageKey = await StateManager.get('currentStorageKey');
-    const value = event.value as AdvancedOptionsFormState;
+    const value = event.value as FeeConfig;
     await StateManager.set(currentStorageKey, value);
 
     await snap.request({

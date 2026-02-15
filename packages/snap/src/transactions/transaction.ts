@@ -2,6 +2,9 @@ import type { BytesLike } from 'ethers';
 import { decodeRlp, getBytes, Interface } from 'ethers';
 import { abi, chains } from 'genlayer-js';
 
+import { StateManager } from '../libs/StateManager';
+import type { FeeConfig } from '../types';
+
 /**
  * Transaction handling and storage key generation.
  */
@@ -92,4 +95,34 @@ export function getTransactionStorageKey(transaction: {
   );
 
   return storageKey;
+}
+
+/**
+ * Sets default fee configuration for a specific contract and method only if no previous config exists.
+ * @param contractAddress - The contract address.
+ * @param methodName - The method name.
+ * @param config - The default fee configuration.
+ * @returns True if config was set, false if a previous config already existed.
+ */
+export async function setDefaultFeeConfig(
+  contractAddress: string,
+  methodName: string,
+  config: FeeConfig,
+): Promise<boolean> {
+  if (!contractAddress || !methodName) {
+    throw new Error('Contract address and method name are required');
+  }
+  const storageKey = generateStorageKey(contractAddress, methodName);
+
+  const existingConfig = await StateManager.get<FeeConfig>(storageKey);
+  if (existingConfig) {
+    return false;
+  }
+
+  const defaultConfig = {
+    ...config,
+  };
+
+  await StateManager.set(storageKey, defaultConfig);
+  return true;
 }
