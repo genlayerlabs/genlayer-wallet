@@ -1,0 +1,4 @@
+# Matrix overrides consumed by genlayer-e2e when this repo triggers a run.
+# Wallet currently tracks the stable v1 line of genlayer-js.
+tooling:
+  genlayer-js: v1

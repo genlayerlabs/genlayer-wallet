@@ -25,7 +25,7 @@
   "dependencies": {
     "@metamask/key-tree": "^10.0.2",
     "ethers": "^6.13.5",
-    "genlayer-js": "^0.6.3"
+    "genlayer-js": "1.1.8"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^3.0.0",
