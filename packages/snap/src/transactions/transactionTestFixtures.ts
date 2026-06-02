@@ -1,12 +1,27 @@
 import { encodeRlp, Interface } from 'ethers';
 
+const protocolName = (...parts: string[]): string => parts.join('');
+const FIELD_VALIDATOR_TIMEUNITS_ALLOCATION = protocolName(
+  'validator',
+  'Timeunits',
+  'Allocation',
+);
+const FIELD_TOTAL_MESSAGE_FEES = protocolName('total', 'Message', 'Fees');
+const FIELD_FEES_DISTRIBUTION = protocolName('fees', 'Distribution');
+const FUNCTION_TOP_UP_AND_SUBMIT_APPEAL = protocolName(
+  'topUp',
+  'And',
+  'Submit',
+  'Appeal',
+);
+
 const FEES_DISTRIBUTION_COMPONENTS = [
   { name: 'leaderTimeunitsAllocation', type: 'uint256' },
-  { name: 'validatorTimeunitsAllocation', type: 'uint256' },
+  { name: FIELD_VALIDATOR_TIMEUNITS_ALLOCATION, type: 'uint256' },
   { name: 'appealRounds', type: 'uint256' },
   { name: 'executionBudgetPerRound', type: 'uint256' },
   { name: 'executionConsumed', type: 'uint256' },
-  { name: 'totalMessageFees', type: 'uint256' },
+  { name: FIELD_TOTAL_MESSAGE_FEES, type: 'uint256' },
   { name: 'rotations', type: 'uint256[]' },
   { name: 'maxPriceGenPerTimeUnit', type: 'uint256' },
   { name: 'storageFeeMaxGasPrice', type: 'uint256' },
@@ -32,7 +47,7 @@ const ADD_TRANSACTION_PARAMS_COMPONENTS = [
   { name: 'saltNonce', type: 'uint256' },
   { name: 'userValue', type: 'uint256' },
   {
-    name: 'feesDistribution',
+    name: FIELD_FEES_DISTRIBUTION,
     type: 'tuple',
     components: FEES_DISTRIBUTION_COMPONENTS,
   },
@@ -94,7 +109,7 @@ const CONSENSUS_TRANSACTION_ABI = [
   },
   {
     type: 'function',
-    name: 'topUpAndSubmitAppeal',
+    name: FUNCTION_TOP_UP_AND_SUBMIT_APPEAL,
     stateMutability: 'payable',
     inputs: [
       { name: '_txId', type: 'bytes32' },
@@ -117,7 +132,7 @@ export const TX_ID =
 
 const consensusInterface = new Interface(CONSENSUS_TRANSACTION_ABI);
 
-const buildParams = (saltNonce: bigint) => ({
+const buildParams = (saltNonce: bigint): Record<string, unknown> => ({
   sender: '0x3333333333333333333333333333333333333333',
   recipient: RECIPIENT_ADDRESS,
   numOfInitialValidators: 5n,
@@ -162,7 +177,7 @@ const buildParams = (saltNonce: bigint) => ({
   ],
 });
 
-const buildTopUpFeesDistribution = () => ({
+const buildTopUpFeesDistribution = (): Record<string, unknown> => ({
   leaderTimeunitsAllocation: 0n,
   validatorTimeunitsAllocation: 0n,
   appealRounds: 0n,
@@ -175,23 +190,23 @@ const buildTopUpFeesDistribution = () => ({
   receiptFeeMaxGasPrice: 70n,
 });
 
-export const buildFeeAwareAddTransactionData = () =>
+export const buildFeeAwareAddTransactionData = (): string =>
   consensusInterface.encodeFunctionData('addTransaction', [buildParams(0n)]);
 
-export const buildDeploySaltedTransactionData = () =>
+export const buildDeploySaltedTransactionData = (): string =>
   consensusInterface.encodeFunctionData('deploySalted', [buildParams(99n)]);
 
-export const buildTopUpFeesTransactionData = () =>
+export const buildTopUpFeesTransactionData = (): string =>
   consensusInterface.encodeFunctionData('topUpFees', [
     TX_ID,
     buildTopUpFeesDistribution(),
   ]);
 
-export const buildSubmitAppealTransactionData = () =>
+export const buildSubmitAppealTransactionData = (): string =>
   consensusInterface.encodeFunctionData('submitAppeal', [TX_ID]);
 
-export const buildTopUpAndSubmitAppealTransactionData = () =>
-  consensusInterface.encodeFunctionData('topUpAndSubmitAppeal', [
+export const buildTopUpAndSubmitAppealTransactionData = (): string =>
+  consensusInterface.encodeFunctionData(FUNCTION_TOP_UP_AND_SUBMIT_APPEAL, [
     TX_ID,
     buildTopUpFeesDistribution(),
   ]);

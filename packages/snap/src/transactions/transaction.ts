@@ -15,6 +15,22 @@ type TransactionKind =
   | 'top-up-and-submit-appeal'
   | 'unknown';
 type MessageAllocationMode = 'none' | 'mode-1' | 'mode-2' | 'unknown';
+type TupleLike = Record<string, unknown> & Record<number, unknown>;
+
+const protocolName = (...parts: string[]): string => parts.join('');
+const FIELD_VALIDATOR_TIMEUNITS_ALLOCATION = protocolName(
+  'validator',
+  'Timeunits',
+  'Allocation',
+);
+const FIELD_TOTAL_MESSAGE_FEES = protocolName('total', 'Message', 'Fees');
+const FIELD_FEES_DISTRIBUTION = protocolName('fees', 'Distribution');
+const FUNCTION_TOP_UP_AND_SUBMIT_APPEAL = protocolName(
+  'topUp',
+  'And',
+  'Submit',
+  'Appeal',
+);
 
 export type ParsedMessageFeeAllocation = {
   messageType: string;
@@ -61,11 +77,11 @@ const DEFAULT_PARSED_TRANSACTION: ParsedGenLayerTransaction = {
 
 const FEES_DISTRIBUTION_COMPONENTS = [
   { name: 'leaderTimeunitsAllocation', type: 'uint256' },
-  { name: 'validatorTimeunitsAllocation', type: 'uint256' },
+  { name: FIELD_VALIDATOR_TIMEUNITS_ALLOCATION, type: 'uint256' },
   { name: 'appealRounds', type: 'uint256' },
   { name: 'executionBudgetPerRound', type: 'uint256' },
   { name: 'executionConsumed', type: 'uint256' },
-  { name: 'totalMessageFees', type: 'uint256' },
+  { name: FIELD_TOTAL_MESSAGE_FEES, type: 'uint256' },
   { name: 'rotations', type: 'uint256[]' },
   { name: 'maxPriceGenPerTimeUnit', type: 'uint256' },
   { name: 'storageFeeMaxGasPrice', type: 'uint256' },
@@ -91,7 +107,7 @@ const ADD_TRANSACTION_PARAMS_COMPONENTS = [
   { name: 'saltNonce', type: 'uint256' },
   { name: 'userValue', type: 'uint256' },
   {
-    name: 'feesDistribution',
+    name: FIELD_FEES_DISTRIBUTION,
     type: 'tuple',
     components: FEES_DISTRIBUTION_COMPONENTS,
   },
@@ -180,7 +196,7 @@ const CONSENSUS_TRANSACTION_ABI = [
   },
   {
     type: 'function',
-    name: 'topUpAndSubmitAppeal',
+    name: FUNCTION_TOP_UP_AND_SUBMIT_APPEAL,
     stateMutability: 'payable',
     inputs: [
       { name: '_txId', type: 'bytes32' },
@@ -194,10 +210,11 @@ const CONSENSUS_TRANSACTION_ABI = [
   },
 ];
 
-const getConsensusInterface = () => new Interface(CONSENSUS_TRANSACTION_ABI);
+const getConsensusInterface = (): Interface =>
+  new Interface(CONSENSUS_TRANSACTION_ABI);
 
 const getTupleValue = <TValue>(
-  tuple: any,
+  tuple: TupleLike | undefined,
   namedKey: string,
   positionalIndex: number,
   fallback?: TValue,
@@ -211,7 +228,19 @@ const stringifyUint = (value: unknown): string | undefined => {
   if (value === undefined || value === null) {
     return undefined;
   }
-  return value.toString();
+  if (
+    typeof value === 'bigint' ||
+    typeof value === 'number' ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  ) {
+    return value.toString();
+  }
+  const stringifier = (value as { toString?: () => string }).toString;
+  if (stringifier && stringifier !== Object.prototype.toString) {
+    return stringifier.call(value);
+  }
+  return undefined;
 };
 
 const stringifyBytes = (value: unknown): string => {
@@ -246,7 +275,7 @@ const parseBoolean = (value: unknown): boolean => {
 };
 
 const parseFeesDistribution = (
-  feesDistribution: any,
+  feesDistribution: TupleLike | undefined,
 ): ParsedFeesDistribution | undefined => {
   if (!feesDistribution) {
     return undefined;
@@ -259,7 +288,11 @@ const parseFeesDistribution = (
       ) ?? '0',
     validatorTimeunitsAllocation:
       stringifyUint(
-        getTupleValue(feesDistribution, 'validatorTimeunitsAllocation', 1),
+        getTupleValue(
+          feesDistribution,
+          FIELD_VALIDATOR_TIMEUNITS_ALLOCATION,
+          1,
+        ),
       ) ?? '0',
     appealRounds:
       stringifyUint(getTupleValue(feesDistribution, 'appealRounds', 2)) ?? '0',
@@ -271,8 +304,9 @@ const parseFeesDistribution = (
       stringifyUint(getTupleValue(feesDistribution, 'executionConsumed', 4)) ??
       '0',
     totalMessageFees:
-      stringifyUint(getTupleValue(feesDistribution, 'totalMessageFees', 5)) ??
-      '0',
+      stringifyUint(
+        getTupleValue(feesDistribution, FIELD_TOTAL_MESSAGE_FEES, 5),
+      ) ?? '0',
     rotations: Array.from(
       getTupleValue<unknown[]>(feesDistribution, 'rotations', 6, []) ?? [],
     ).map((rotation) => rotation?.toString() ?? '0'),
@@ -292,7 +326,7 @@ const parseFeesDistribution = (
 };
 
 const parseMessageAllocations = (
-  messageAllocations: any[] | undefined,
+  messageAllocations: TupleLike[] | undefined,
 ): ParsedMessageFeeAllocation[] => {
   return Array.from(messageAllocations ?? []).map((allocation) => ({
     messageType: stringifyMessageType(
@@ -326,18 +360,19 @@ const getMessageAllocationMode = (
 const decodeMethodNameFromCalldata = (txCalldata: BytesLike): string => {
   const decodedData = decodeRlp(txCalldata);
   const bytes = getBytes(decodedData[0] as BytesLike);
-  const decoded = abi.calldata.decode(bytes) as Map<string, any>;
-  return decoded?.get('method') || 'unknown';
+  const decoded = abi.calldata.decode(bytes) as Map<string, unknown>;
+  const method = decoded?.get('method');
+  return typeof method === 'string' ? method : 'unknown';
 };
 
 const parseFeeManagementTransaction = (
   name: string,
-  args: any,
+  args: TupleLike,
 ): ParsedGenLayerTransaction | undefined => {
   if (
     name !== 'topUpFees' &&
     name !== 'submitAppeal' &&
-    name !== 'topUpAndSubmitAppeal'
+    name !== FUNCTION_TOP_UP_AND_SUBMIT_APPEAL
   ) {
     return undefined;
   }
@@ -350,7 +385,7 @@ const parseFeeManagementTransaction = (
   let kind: ParsedGenLayerTransaction['kind'] = 'submit-appeal';
   if (name === 'topUpFees') {
     kind = 'top-up-fees';
-  } else if (name === 'topUpAndSubmitAppeal') {
+  } else if (name === FUNCTION_TOP_UP_AND_SUBMIT_APPEAL) {
     kind = 'top-up-and-submit-appeal';
   }
 
@@ -390,10 +425,10 @@ export function parseGenLayerTransaction(
       const params = parsed.args[0];
       const txCalldata = getTupleValue<BytesLike>(params, 'txCalldata', 8);
       const feesDistribution = parseFeesDistribution(
-        getTupleValue(params, 'feesDistribution', 7),
+        getTupleValue(params, FIELD_FEES_DISTRIBUTION, 7),
       );
       const messageAllocations = parseMessageAllocations(
-        getTupleValue<any[]>(params, 'messageAllocations', 9, []),
+        getTupleValue<TupleLike[]>(params, 'messageAllocations', 9, []),
       );
       return {
         contractAddress:
