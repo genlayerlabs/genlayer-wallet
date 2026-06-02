@@ -4,6 +4,9 @@ build/
 coverage/
 .cache/
 public/
+packages/harness/cache/
+packages/harness/out/
+packages/site/static/harness.local.json
 package-lock.json
 
 # Logs

@@ -1,0 +1,16 @@
+{
+  "chainId": 31337,
+  "rpcUrl": "http://127.0.0.1:8545",
+  "deployedAt": "example",
+  "deployer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+  "contracts": {
+    "shim": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "txHash": "0x"
+    },
+    "gateway": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "txHash": "0x"
+    }
+  }
+}

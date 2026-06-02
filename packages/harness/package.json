@@ -1,0 +1,11 @@
+{
+  "name": "harness",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "anvil": "anvil --chain-id 31337 --host 0.0.0.0",
+    "compile": "forge build",
+    "deploy": "node scripts/deploy.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  }
+}

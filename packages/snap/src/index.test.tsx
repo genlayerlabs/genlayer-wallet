@@ -5,7 +5,10 @@ import { UserInputEventType } from '@metamask/snaps-sdk';
 import { onTransaction, onUserInput } from '.';
 import type { AdvancedOptionsFormState } from './components';
 import { StateManager } from './libs/StateManager';
-import { getTransactionStorageKey } from './transactions/transaction';
+import {
+  getTransactionStorageKey,
+  parseGenLayerTransaction,
+} from './transactions/transaction';
 
 jest.mock('genlayer-js', () => ({
   abi: {
@@ -53,8 +56,16 @@ describe('Snap Handlers', () => {
         data: '0xa9059cbb00000000',
       };
       const mockStorageKey = '0x123456_a9059cbb';
+      const mockTransactionSummary = {
+        contractAddress: '0x123456',
+        methodName: 'transfer',
+        kind: 'fee-aware',
+      };
 
       (getTransactionStorageKey as jest.Mock).mockReturnValue(mockStorageKey);
+      (parseGenLayerTransaction as jest.Mock).mockReturnValue(
+        mockTransactionSummary,
+      );
       (StateManager.set as jest.Mock).mockResolvedValue(undefined);
       jest.spyOn(snap, 'request').mockResolvedValue('test-interface-id');
 
@@ -66,6 +77,10 @@ describe('Snap Handlers', () => {
       expect(StateManager.set).toHaveBeenCalledWith(
         'currentStorageKey',
         mockStorageKey,
+      );
+      expect(StateManager.set).toHaveBeenCalledWith(
+        `${mockStorageKey}:transactionSummary`,
+        mockTransactionSummary,
       );
       expect(result).toEqual({ id: 'test-interface-id' });
     });

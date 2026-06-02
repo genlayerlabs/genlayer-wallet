@@ -69,6 +69,236 @@ describe('Transaction Utilities', () => {
       expect(result).toStrictEqual({
         contractAddress: '0x1234567890123456789012345678901234567890',
         methodName: 'transfer',
+        kind: 'legacy',
+        validUntil: undefined,
+      });
+    });
+
+    it('should extract contract, method, and fees from fee-aware GenLayer transaction', () => {
+      const mockInterface = {
+        parseTransaction: jest.fn().mockReturnValue({
+          name: 'addTransaction',
+          args: [
+            {
+              recipient: '0x1234567890123456789012345678901234567890',
+              txCalldata: 'encodedData',
+              userValue: 7n,
+              validUntil: 123n,
+              saltNonce: 0n,
+              feesDistribution: {
+                leaderTimeunitsAllocation: 10n,
+                validatorTimeunitsAllocation: 20n,
+                appealRounds: 1n,
+                executionBudgetPerRound: 30n,
+                executionConsumed: 0n,
+                totalMessageFees: 40n,
+                rotations: [0n, 1n],
+                maxPriceGenPerTimeUnit: 50n,
+                storageFeeMaxGasPrice: 60n,
+                receiptFeeMaxGasPrice: 70n,
+              },
+              messageAllocations: [
+                {
+                  messageType: 1n,
+                  onAcceptance: true,
+                  parentIndex:
+                    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                  recipient: '0x1111111111111111111111111111111111111111',
+                  callKey:
+                    '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+                  budget: 25n,
+                  feeParams: '0x1234',
+                },
+                {
+                  messageType: 0n,
+                  onAcceptance: false,
+                  parentIndex: 0n,
+                  recipient: '0x2222222222222222222222222222222222222222',
+                  callKey:
+                    '0x0000000000000000000000000000000000000000000000000000000000000000',
+                  budget: 15n,
+                  feeParams: '0xabcd',
+                },
+              ],
+            },
+          ],
+        }),
+      };
+
+      MockedInterface.mockReturnValue(mockInterface as any);
+      mockedDecodeRlp.mockReturnValue(['decodedCalldata']);
+      mockedGetBytes.mockReturnValue(new Uint8Array([1, 2, 3, 4]));
+
+      const mockDecoded = new Map();
+      mockDecoded.set('method', 'claim');
+      mockedAbi.calldata.decode.mockReturnValue(mockDecoded);
+
+      const result = parseGenLayerTransaction('0xabcdef123456');
+
+      expect(result).toStrictEqual({
+        contractAddress: '0x1234567890123456789012345678901234567890',
+        methodName: 'claim',
+        kind: 'fee-aware',
+        userValue: '7',
+        validUntil: '123',
+        saltNonce: '0',
+        feesDistribution: {
+          leaderTimeunitsAllocation: '10',
+          validatorTimeunitsAllocation: '20',
+          appealRounds: '1',
+          executionBudgetPerRound: '30',
+          executionConsumed: '0',
+          totalMessageFees: '40',
+          rotations: ['0', '1'],
+          maxPriceGenPerTimeUnit: '50',
+          storageFeeMaxGasPrice: '60',
+          receiptFeeMaxGasPrice: '70',
+        },
+        messageAllocationMode: 'mode-2',
+        messageAllocations: [
+          {
+            messageType: 'Internal',
+            onAcceptance: true,
+            parentIndex:
+              '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+            recipient: '0x1111111111111111111111111111111111111111',
+            callKey:
+              '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            budget: '25',
+            feeParams: '0x1234',
+          },
+          {
+            messageType: 'External',
+            onAcceptance: false,
+            parentIndex: '0',
+            recipient: '0x2222222222222222222222222222222222222222',
+            callKey:
+              '0x0000000000000000000000000000000000000000000000000000000000000000',
+            budget: '15',
+            feeParams: '0xabcd',
+          },
+        ],
+        messageAllocationsCount: 2,
+      });
+    });
+
+    it('should identify message fee mode 1 when only the global message bucket is provided', () => {
+      const mockInterface = {
+        parseTransaction: jest.fn().mockReturnValue({
+          name: 'addTransaction',
+          args: [
+            {
+              recipient: '0x1234567890123456789012345678901234567890',
+              txCalldata: 'encodedData',
+              userValue: 0n,
+              validUntil: 123n,
+              saltNonce: 0n,
+              feesDistribution: {
+                leaderTimeunitsAllocation: 10n,
+                validatorTimeunitsAllocation: 20n,
+                appealRounds: 0n,
+                executionBudgetPerRound: 30n,
+                executionConsumed: 0n,
+                totalMessageFees: 40n,
+                rotations: [0n],
+                maxPriceGenPerTimeUnit: 50n,
+                storageFeeMaxGasPrice: 60n,
+                receiptFeeMaxGasPrice: 70n,
+              },
+              messageAllocations: [],
+            },
+          ],
+        }),
+      };
+
+      MockedInterface.mockReturnValue(mockInterface as any);
+      mockedDecodeRlp.mockReturnValue(['decodedCalldata']);
+      mockedGetBytes.mockReturnValue(new Uint8Array([1, 2, 3, 4]));
+
+      const mockDecoded = new Map();
+      mockDecoded.set('method', 'emitMessage');
+      mockedAbi.calldata.decode.mockReturnValue(mockDecoded);
+
+      const result = parseGenLayerTransaction('0xabcdef123456');
+
+      expect(result.messageAllocationMode).toBe('mode-1');
+      expect(result.messageAllocations).toStrictEqual([]);
+      expect(result.messageAllocationsCount).toBe(0);
+    });
+
+    it('should extract fee policy from topUpFees calldata', () => {
+      const feesDistribution = {
+        leaderTimeunitsAllocation: 0n,
+        validatorTimeunitsAllocation: 0n,
+        appealRounds: 0n,
+        executionBudgetPerRound: 0n,
+        executionConsumed: 0n,
+        totalMessageFees: 25n,
+        rotations: [0n],
+        maxPriceGenPerTimeUnit: 50n,
+        storageFeeMaxGasPrice: 60n,
+        receiptFeeMaxGasPrice: 70n,
+      };
+      const mockInterface = {
+        parseTransaction: jest.fn().mockReturnValue({
+          name: 'topUpFees',
+          args: [
+            '0x9999999999999999999999999999999999999999999999999999999999999999',
+            feesDistribution,
+          ],
+        }),
+      };
+
+      MockedInterface.mockReturnValue(mockInterface as any);
+
+      const result = parseGenLayerTransaction('0xabcdef123456');
+
+      expect(result).toStrictEqual({
+        contractAddress: 'consensus',
+        methodName: 'topUpFees',
+        kind: 'top-up-fees',
+        txId: '0x9999999999999999999999999999999999999999999999999999999999999999',
+        feesDistribution: {
+          leaderTimeunitsAllocation: '0',
+          validatorTimeunitsAllocation: '0',
+          appealRounds: '0',
+          executionBudgetPerRound: '0',
+          executionConsumed: '0',
+          totalMessageFees: '25',
+          rotations: ['0'],
+          maxPriceGenPerTimeUnit: '50',
+          storageFeeMaxGasPrice: '60',
+          receiptFeeMaxGasPrice: '70',
+        },
+        messageAllocationMode: 'mode-1',
+        messageAllocations: [],
+        messageAllocationsCount: 0,
+      });
+    });
+
+    it('should extract tx id from submitAppeal calldata', () => {
+      const mockInterface = {
+        parseTransaction: jest.fn().mockReturnValue({
+          name: 'submitAppeal',
+          args: [
+            '0x9999999999999999999999999999999999999999999999999999999999999999',
+          ],
+        }),
+      };
+
+      MockedInterface.mockReturnValue(mockInterface as any);
+
+      const result = parseGenLayerTransaction('0xabcdef123456');
+
+      expect(result).toStrictEqual({
+        contractAddress: 'consensus',
+        methodName: 'submitAppeal',
+        kind: 'submit-appeal',
+        txId: '0x9999999999999999999999999999999999999999999999999999999999999999',
+        feesDistribution: undefined,
+        messageAllocationMode: undefined,
+        messageAllocations: undefined,
+        messageAllocationsCount: undefined,
       });
     });
 
@@ -82,6 +312,7 @@ describe('Transaction Utilities', () => {
       expect(result).toStrictEqual({
         contractAddress: 'default',
         methodName: 'unknown',
+        kind: 'unknown',
       });
     });
 
@@ -105,6 +336,8 @@ describe('Transaction Utilities', () => {
       expect(result).toStrictEqual({
         contractAddress: 'default',
         methodName: 'transfer',
+        kind: 'legacy',
+        validUntil: undefined,
       });
     });
 
@@ -134,6 +367,8 @@ describe('Transaction Utilities', () => {
       expect(result).toStrictEqual({
         contractAddress: '0x1234567890123456789012345678901234567890',
         methodName: 'unknown',
+        kind: 'legacy',
+        validUntil: undefined,
       });
     });
   });
