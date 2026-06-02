@@ -1,4 +1,5 @@
 # Matrix overrides consumed by genlayer-e2e when this repo triggers a run.
-# Wallet currently tracks the stable v1 line of genlayer-js.
+# Wallet fee work tracks the v0.6/M5 fee-aware genlayer-js line until that
+# surface is released on the stable v1 line.
 tooling:
-  genlayer-js: v1
+  genlayer-js: codex/v06-fees-tooling

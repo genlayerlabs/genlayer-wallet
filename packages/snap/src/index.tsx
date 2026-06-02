@@ -7,17 +7,47 @@ import { UserInputEventType } from '@metamask/snaps-sdk';
 import type { AdvancedOptionsFormState } from './components';
 import { AdvancedOptionsForm, TransactionConfig } from './components';
 import { StateManager } from './libs/StateManager';
-import { getTransactionStorageKey } from './transactions/transaction';
+import {
+  getTransactionStorageKey,
+  parseGenLayerTransaction,
+  type ParsedGenLayerTransaction,
+} from './transactions/transaction';
+
+const getTransactionSummaryStorageKey = (storageKey: string) =>
+  `${storageKey}:transactionSummary`;
+
+const getCurrentTransactionSummary = async () => {
+  const currentStorageKey = await StateManager.get('currentStorageKey');
+  if (!currentStorageKey) {
+    return undefined;
+  }
+
+  return (await StateManager.get(
+    getTransactionSummaryStorageKey(currentStorageKey),
+  )) as ParsedGenLayerTransaction | undefined;
+};
+
+const toJsonTransactionSummary = (summary: ParsedGenLayerTransaction) =>
+  JSON.parse(JSON.stringify(summary)) as ParsedGenLayerTransaction;
 
 export const onTransaction: OnTransactionHandler = async ({ transaction }) => {
   const storageKey = getTransactionStorageKey(transaction);
+  const transactionSummary = parseGenLayerTransaction(transaction.data ?? '');
+  const jsonTransactionSummary = toJsonTransactionSummary(transactionSummary);
   await StateManager.set('currentStorageKey', storageKey);
+  await StateManager.set(
+    getTransactionSummaryStorageKey(storageKey),
+    jsonTransactionSummary,
+  );
 
   const interfaceId = await snap.request({
     method: 'snap_createInterface',
     params: {
-      ui: <TransactionConfig />,
-      context: { transaction }, // here we need to change the context with the new modified transaction
+      ui: <TransactionConfig summary={transactionSummary} />,
+      context: {
+        transaction,
+        transactionSummary: jsonTransactionSummary as any,
+      },
     },
   });
 
@@ -45,11 +75,13 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
   if (event.type === UserInputEventType.ButtonClickEvent) {
     switch (event.name) {
       case 'cancel_config':
+        // eslint-disable-next-line no-case-declarations
+        const transactionSummary = await getCurrentTransactionSummary();
         await snap.request({
           method: 'snap_updateInterface',
           params: {
             id,
-            ui: <TransactionConfig />,
+            ui: <TransactionConfig summary={transactionSummary ?? null} />,
           },
         });
         break;
@@ -82,13 +114,14 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
   ) {
     const currentStorageKey = await StateManager.get('currentStorageKey');
     const value = event.value as AdvancedOptionsFormState;
+    const transactionSummary = await getCurrentTransactionSummary();
     await StateManager.set(currentStorageKey, value);
 
     await snap.request({
       method: 'snap_updateInterface',
       params: {
         id,
-        ui: <TransactionConfig />,
+        ui: <TransactionConfig summary={transactionSummary ?? null} />,
       },
     });
   }

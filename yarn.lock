@@ -12539,6 +12539,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"harness@workspace:packages/harness":
+  version: 0.0.0-use.local
+  resolution: "harness@workspace:packages/harness"
+  languageName: unknown
+  linkType: soft
+
 "has-bigints@npm:^1.0.2":
   version: 1.1.0
   resolution: "has-bigints@npm:1.1.0"
@@ -18905,6 +18911,7 @@ __metadata:
     eslint-plugin-n: ^15.7.0
     eslint-plugin-prettier: ^4.2.1
     eslint-plugin-promise: ^6.1.1
+    ethers: ^6.13.5
     gatsby: ^5.13.3
     gatsby-plugin-manifest: ^5.13.1
     gatsby-plugin-styled-components: ^6.13.1
