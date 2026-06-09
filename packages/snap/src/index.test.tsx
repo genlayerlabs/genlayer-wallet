@@ -61,6 +61,11 @@ describe('Snap Handlers', () => {
         methodName: 'transfer',
         kind: 'fee-aware',
       };
+      const mockTransactionSummaryWithValue = {
+        ...mockTransactionSummary,
+        totalValue: '2748',
+        feeDeposit: '2748',
+      };
 
       (getTransactionStorageKey as jest.Mock).mockReturnValue(mockStorageKey);
       (parseGenLayerTransaction as jest.Mock).mockReturnValue(
@@ -80,7 +85,7 @@ describe('Snap Handlers', () => {
       );
       expect(StateManager.set).toHaveBeenCalledWith(
         `${mockStorageKey}:transactionSummary`,
-        mockTransactionSummary,
+        mockTransactionSummaryWithValue,
       );
       expect(result).toEqual({ id: 'test-interface-id' });
     });

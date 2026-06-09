@@ -1,5 +1,9 @@
 import { abi } from 'genlayer-js';
 
+import {
+  buildTransaction,
+  makeDefaultForm,
+} from '../../../site/src/prototype/transaction';
 import { parseGenLayerTransaction } from './transaction';
 import {
   buildDeploySaltedTransactionData,
@@ -75,6 +79,37 @@ describe('Transaction Utilities integration', () => {
       ],
       messageAllocationsCount: 2,
     });
+  });
+
+  it('decodes fee-aware addTransaction calldata built by the site encoder', () => {
+    const built = buildTransaction({
+      ...makeDefaultForm(),
+      messageMode: 'mode2',
+    });
+    const result = parseGenLayerTransaction(built.addTransactionCalldata);
+
+    expect(result.kind).toBe('fee-aware');
+    expect(result.contractAddress).toBe(
+      '0x1111111111111111111111111111111111111111',
+    );
+    expect(result.methodName).toBe('claim');
+    expect(result.feesDistribution).toStrictEqual({
+      leaderTimeunitsAllocation: '100',
+      validatorTimeunitsAllocation: '200',
+      appealRounds: '1',
+      executionBudgetPerRound: '10000000000000000',
+      executionConsumed: '0',
+      totalMessageFees: '20000000000000000',
+      rotations: ['0', '1'],
+      maxPriceGenPerTimeUnit: '120000000000',
+      storageFeeMaxGasPrice: '24000000000',
+      receiptFeeMaxGasPrice: '24000000000',
+    });
+    expect(result.messageAllocationMode).toBe('mode-2');
+    expect(result.messageAllocationsCount).toBe(1);
+    expect(result.messageAllocations?.[0]?.callKey).toBe(
+      '0x0000000000000000000000000000000000000000000000000000000000000000',
+    );
   });
 
   it('decodes deploySalted fee-aware calldata as a deploy transaction', () => {

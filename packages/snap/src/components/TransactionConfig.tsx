@@ -17,6 +17,35 @@ export type TransactionConfigProps = {
 
 const displayValue = (value: string | undefined): string => value ?? 'unknown';
 
+const WEI_PER_GEN = 1_000_000_000_000_000_000n;
+
+const formatWeiToGen = (value: string | undefined): string => {
+  if (value === undefined) {
+    return 'unknown';
+  }
+
+  const wei = BigInt(value);
+  const whole = wei / WEI_PER_GEN;
+  const fraction = wei % WEI_PER_GEN;
+  if (fraction === 0n) {
+    return `${whole.toString()} GEN`;
+  }
+
+  const fractionText = fraction.toString().padStart(18, '0');
+  const significantDigits =
+    whole > 0n
+      ? 6
+      : Math.max(
+          6,
+          fractionText.search(/[1-9]/u) + 6,
+        );
+  const trimmedFraction = fractionText
+    .slice(0, Math.min(significantDigits, 18))
+    .replace(/0+$/u, '');
+
+  return `${whole.toString()}.${trimmedFraction} GEN`;
+};
+
 const allocationSummary = (
   allocation: NonNullable<
     ParsedGenLayerTransaction['messageAllocations']
@@ -35,6 +64,12 @@ export const TransactionConfig: SnapComponent<TransactionConfigProps> = ({
   const messageAllocations = transactionSummary?.messageAllocations ?? [];
   const messageAllocationsCount =
     transactionSummary?.messageAllocationsCount ?? 0;
+  const totalValue = transactionSummary?.totalValue;
+  const userValue = transactionSummary?.userValue;
+  const feeDeposit = transactionSummary?.feeDeposit;
+  const isAppealPayment =
+    transactionSummary?.kind === 'submit-appeal' ||
+    transactionSummary?.kind === 'top-up-and-submit-appeal';
 
   return (
     <Box>
@@ -64,10 +99,42 @@ export const TransactionConfig: SnapComponent<TransactionConfigProps> = ({
         <Divider />
         <Box direction="horizontal" alignment={'space-between'}>
           <Text>
+            <Bold>Total:</Bold>
+          </Text>
+          <Text>{formatWeiToGen(totalValue)}</Text>
+        </Box>
+        <Text>
+          <Italic>Raw total: {displayValue(totalValue)} wei</Italic>
+        </Text>
+        <Box direction="horizontal" alignment={'space-between'}>
+          <Text>
+            <Bold>Fee deposit:</Bold>
+          </Text>
+          <Text>
+            {formatWeiToGen(feeDeposit)} (+ userValue{' '}
+            {formatWeiToGen(userValue)})
+          </Text>
+        </Box>
+        <Text>
+          <Italic>Raw fee deposit: {displayValue(feeDeposit)} wei</Italic>
+        </Text>
+        {isAppealPayment ? (
+          <Box direction="horizontal" alignment={'space-between'}>
+            <Text>
+              <Bold>Bond/value paid:</Bold>
+            </Text>
+            <Text>{formatWeiToGen(totalValue)}</Text>
+          </Box>
+        ) : null}
+        <Box direction="horizontal" alignment={'space-between'}>
+          <Text>
             <Bold>User value:</Bold>
           </Text>
-          <Text>{displayValue(transactionSummary?.userValue)}</Text>
+          <Text>{formatWeiToGen(userValue)}</Text>
         </Box>
+        <Text>
+          <Italic>Raw user value: {displayValue(userValue)} wei</Italic>
+        </Text>
         <Box direction="horizontal" alignment={'space-between'}>
           <Text>Leader time units:</Text>
           <Text>

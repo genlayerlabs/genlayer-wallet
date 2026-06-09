@@ -2,6 +2,7 @@ import {
   AbiCoder,
   Interface,
   TypedDataEncoder,
+  encodeRlp,
   formatUnits,
   getAddress,
   hexlify,
@@ -35,49 +36,47 @@ export type PrototypeForm = {
   saltNonce: string;
   gatewayNonce: string;
   profile: FeeProfile;
-  leaderTimeoutFee: string;
-  validatorsTimeoutFee: string;
+  leaderTimeunitsAllocation: string;
+  validatorTimeunitsAllocation: string;
   appealRounds: string;
-  rollupUnifiedBudgetPerRound: string;
+  executionBudgetPerRound: string;
   totalMessageFees: string;
   rotations: string;
   maxPriceGenPerTimeUnit: string;
+  storageFeeMaxGasPrice: string;
+  receiptFeeMaxGasPrice: string;
   messageMode: MessageMode;
   messageRecipient: string;
-  messageSelector: string;
+  messageCallKey: string;
   messageBudget: string;
   messageLeaderTimeunits: string;
   messageValidatorTimeunits: string;
   messageAppealRounds: string;
-  messageRollupBudget: string;
+  messageExecutionBudget: string;
   messageRotations: string;
 };
 
 export type FeesDistribution = {
-  leaderTimeoutFee: bigint;
-  validatorsTimeoutFee: bigint;
-  appealRounds: bigint;
-  rollupUnifiedBudgetPerRound: bigint;
-  rollupUnifiedConsumed: bigint;
-  totalMessageFees: bigint;
-  rotations: bigint[];
-  maxPriceGenPerTimeUnit: bigint;
-};
-
-export type MessageFeeParams = {
   leaderTimeunitsAllocation: bigint;
   validatorTimeunitsAllocation: bigint;
   appealRounds: bigint;
-  rollupUnifiedBudgetPerRound: bigint;
+  executionBudgetPerRound: bigint;
+  executionConsumed: bigint;
+  totalMessageFees: bigint;
   rotations: bigint[];
+  maxPriceGenPerTimeUnit: bigint;
+  storageFeeMaxGasPrice: bigint;
+  receiptFeeMaxGasPrice: bigint;
 };
 
 export type MessageFeeAllocationNode = {
+  messageType: bigint;
+  onAcceptance: boolean;
   parentIndex: bigint;
   recipient: string;
-  functionSelector: string;
+  callKey: string;
   budget: bigint;
-  feeParams: MessageFeeParams;
+  feeParams: string;
 };
 
 export type AddTransactionParams = {
@@ -182,12 +181,12 @@ export const CONSENSUS_MAIN_WITH_FEES_ABI = [
             components: [
               {
                 internalType: 'uint256',
-                name: 'leaderTimeoutFee',
+                name: 'leaderTimeunitsAllocation',
                 type: 'uint256',
               },
               {
                 internalType: 'uint256',
-                name: 'validatorsTimeoutFee',
+                name: 'validatorTimeunitsAllocation',
                 type: 'uint256',
               },
               {
@@ -197,12 +196,12 @@ export const CONSENSUS_MAIN_WITH_FEES_ABI = [
               },
               {
                 internalType: 'uint256',
-                name: 'rollupUnifiedBudgetPerRound',
+                name: 'executionBudgetPerRound',
                 type: 'uint256',
               },
               {
                 internalType: 'uint256',
-                name: 'rollupUnifiedConsumed',
+                name: 'executionConsumed',
                 type: 'uint256',
               },
               {
@@ -220,6 +219,16 @@ export const CONSENSUS_MAIN_WITH_FEES_ABI = [
                 name: 'maxPriceGenPerTimeUnit',
                 type: 'uint256',
               },
+              {
+                internalType: 'uint256',
+                name: 'storageFeeMaxGasPrice',
+                type: 'uint256',
+              },
+              {
+                internalType: 'uint256',
+                name: 'receiptFeeMaxGasPrice',
+                type: 'uint256',
+              },
             ],
             internalType: 'struct IFeeManager.FeesDistribution',
             name: 'feesDistribution',
@@ -228,46 +237,17 @@ export const CONSENSUS_MAIN_WITH_FEES_ABI = [
           { internalType: 'bytes', name: 'txCalldata', type: 'bytes' },
           {
             components: [
+              { internalType: 'uint8', name: 'messageType', type: 'uint8' },
+              { internalType: 'bool', name: 'onAcceptance', type: 'bool' },
               { internalType: 'uint256', name: 'parentIndex', type: 'uint256' },
               { internalType: 'address', name: 'recipient', type: 'address' },
               {
-                internalType: 'bytes4',
-                name: 'functionSelector',
-                type: 'bytes4',
+                internalType: 'bytes32',
+                name: 'callKey',
+                type: 'bytes32',
               },
               { internalType: 'uint256', name: 'budget', type: 'uint256' },
-              {
-                components: [
-                  {
-                    internalType: 'uint256',
-                    name: 'leaderTimeunitsAllocation',
-                    type: 'uint256',
-                  },
-                  {
-                    internalType: 'uint256',
-                    name: 'validatorTimeunitsAllocation',
-                    type: 'uint256',
-                  },
-                  {
-                    internalType: 'uint256',
-                    name: 'appealRounds',
-                    type: 'uint256',
-                  },
-                  {
-                    internalType: 'uint256',
-                    name: 'rollupUnifiedBudgetPerRound',
-                    type: 'uint256',
-                  },
-                  {
-                    internalType: 'uint256[]',
-                    name: 'rotations',
-                    type: 'uint256[]',
-                  },
-                ],
-                internalType: 'struct IMessages.MessageFeeParams',
-                name: 'feeParams',
-                type: 'tuple',
-              },
+              { internalType: 'bytes', name: 'feeParams', type: 'bytes' },
             ],
             internalType: 'struct IMessages.MessageFeeAllocationNode[]',
             name: 'messageAllocations',
@@ -286,7 +266,10 @@ export const CONSENSUS_MAIN_WITH_FEES_ABI = [
   },
 ];
 
-const addTransactionParamsInput = CONSENSUS_MAIN_WITH_FEES_ABI[0].inputs[0];
+const addTransactionParamsInput = CONSENSUS_MAIN_WITH_FEES_ABI[0]?.inputs[0];
+if (!addTransactionParamsInput) {
+  throw new Error('Missing addTransaction params input');
+}
 
 export const GENLAYER_INTENT_GATEWAY_ABI = [
   {
@@ -461,21 +444,24 @@ export const makeDefaultForm = (): PrototypeForm => ({
   saltNonce: '0',
   gatewayNonce: '0',
   profile: 'standard',
-  leaderTimeoutFee: '0.001',
-  validatorsTimeoutFee: '0.002',
+  leaderTimeunitsAllocation: '100',
+  validatorTimeunitsAllocation: '200',
   appealRounds: '1',
-  rollupUnifiedBudgetPerRound: '0.01',
+  executionBudgetPerRound: '0.01',
   totalMessageFees: '0.02',
   rotations: '0,1',
-  maxPriceGenPerTimeUnit: '120',
+  maxPriceGenPerTimeUnit: '0.00000012',
+  storageFeeMaxGasPrice: '24',
+  receiptFeeMaxGasPrice: '24',
   messageMode: 'mode1',
   messageRecipient: '0x2222222222222222222222222222222222222222',
-  messageSelector: '0x00000000',
+  messageCallKey:
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
   messageBudget: '0.02',
-  messageLeaderTimeunits: '0.001',
-  messageValidatorTimeunits: '0.002',
+  messageLeaderTimeunits: '100',
+  messageValidatorTimeunits: '200',
   messageAppealRounds: '1',
-  messageRollupBudget: '0.005',
+  messageExecutionBudget: '0.005',
   messageRotations: '0',
 });
 
@@ -521,6 +507,13 @@ const parseUint = (value: string): bigint => {
   return BigInt(parsed);
 };
 
+const parseGwei = (value: string): bigint => {
+  if (!value.trim()) {
+    return 0n;
+  }
+  return parseUnits(value.trim(), 'gwei');
+};
+
 const parseRotations = (value: string): bigint[] => {
   const rotations = value
     .split(',')
@@ -541,11 +534,11 @@ const normalizeAddress = (address: string, fallback = ZERO_ADDRESS): string => {
   return getAddress(address);
 };
 
-const normalizeBytes4 = (value: string): string => {
-  if (/^0x[0-9a-fA-F]{8}$/u.test(value)) {
+const normalizeBytes32 = (value: string): string => {
+  if (/^0x[0-9a-fA-F]{64}$/u.test(value)) {
     return value;
   }
-  return '0x00000000';
+  return '0x0000000000000000000000000000000000000000000000000000000000000000';
 };
 
 const buildTxCalldata = (methodName: string): string => {
@@ -555,36 +548,32 @@ const buildTxCalldata = (methodName: string): string => {
     prototype: true,
   };
 
-  return hexlify(toUtf8Bytes(JSON.stringify(payload)));
+  return encodeRlp([hexlify(toUtf8Bytes(JSON.stringify(payload)))]);
 };
 
 const toFeeTuple = (fees: FeesDistribution): unknown[] => [
-  fees.leaderTimeoutFee,
-  fees.validatorsTimeoutFee,
+  fees.leaderTimeunitsAllocation,
+  fees.validatorTimeunitsAllocation,
   fees.appealRounds,
-  fees.rollupUnifiedBudgetPerRound,
-  fees.rollupUnifiedConsumed,
+  fees.executionBudgetPerRound,
+  fees.executionConsumed,
   fees.totalMessageFees,
   fees.rotations,
   fees.maxPriceGenPerTimeUnit,
-];
-
-const toMessageFeeTuple = (feeParams: MessageFeeParams): unknown[] => [
-  feeParams.leaderTimeunitsAllocation,
-  feeParams.validatorTimeunitsAllocation,
-  feeParams.appealRounds,
-  feeParams.rollupUnifiedBudgetPerRound,
-  feeParams.rotations,
+  fees.storageFeeMaxGasPrice,
+  fees.receiptFeeMaxGasPrice,
 ];
 
 const toMessageAllocationTuple = (
   node: MessageFeeAllocationNode,
 ): unknown[] => [
+  node.messageType,
+  node.onAcceptance,
   node.parentIndex,
   node.recipient,
-  node.functionSelector,
+  node.callKey,
   node.budget,
-  toMessageFeeTuple(node.feeParams),
+  node.feeParams,
 ];
 
 const toAddTransactionTuple = (params: AddTransactionParams): unknown[] => [
@@ -607,14 +596,16 @@ export const buildFeesDistribution = (
     form.messageMode === 'none' ? 0n : parseGen(form.totalMessageFees);
 
   return {
-    leaderTimeoutFee: parseGen(form.leaderTimeoutFee),
-    validatorsTimeoutFee: parseGen(form.validatorsTimeoutFee),
+    leaderTimeunitsAllocation: parseUint(form.leaderTimeunitsAllocation),
+    validatorTimeunitsAllocation: parseUint(form.validatorTimeunitsAllocation),
     appealRounds: parseUint(form.appealRounds),
-    rollupUnifiedBudgetPerRound: parseGen(form.rollupUnifiedBudgetPerRound),
-    rollupUnifiedConsumed: 0n,
+    executionBudgetPerRound: parseGen(form.executionBudgetPerRound),
+    executionConsumed: 0n,
     totalMessageFees,
     rotations: parseRotations(form.rotations),
-    maxPriceGenPerTimeUnit: parseUint(form.maxPriceGenPerTimeUnit),
+    maxPriceGenPerTimeUnit: parseGen(form.maxPriceGenPerTimeUnit),
+    storageFeeMaxGasPrice: parseGwei(form.storageFeeMaxGasPrice),
+    receiptFeeMaxGasPrice: parseGwei(form.receiptFeeMaxGasPrice),
   };
 };
 
@@ -627,33 +618,46 @@ export const buildMessageAllocations = (
 
   return [
     {
+      messageType: 1n,
+      onAcceptance: true,
       parentIndex: ROOT_ALLOCATION_PARENT,
       recipient: normalizeAddress(form.messageRecipient),
-      functionSelector: normalizeBytes4(form.messageSelector),
+      callKey: normalizeBytes32(form.messageCallKey),
       budget: parseGen(form.messageBudget),
-      feeParams: {
-        leaderTimeunitsAllocation: parseGen(form.messageLeaderTimeunits),
-        validatorTimeunitsAllocation: parseGen(form.messageValidatorTimeunits),
-        appealRounds: parseUint(form.messageAppealRounds),
-        rollupUnifiedBudgetPerRound: parseGen(form.messageRollupBudget),
-        rotations: parseRotations(form.messageRotations),
-      },
+      feeParams: abiCoder.encode(
+        ['tuple(uint256,uint256,uint256,uint256,uint256[])'],
+        [
+          [
+            parseUint(form.messageLeaderTimeunits),
+            parseUint(form.messageValidatorTimeunits),
+            parseUint(form.messageAppealRounds),
+            parseGen(form.messageExecutionBudget),
+            parseRotations(form.messageRotations),
+          ],
+        ],
+      ),
     },
   ];
 };
 
 export const estimateFees = (params: AddTransactionParams): FeeEstimate => {
-  const rounds = Math.max(params.feesDistribution.rotations.length, 1);
+  const rounds = Number(params.feesDistribution.rotations[0] ?? 0n) + 1;
   const validators = params.numOfInitialValidators;
-  const leaderPerRound = params.feesDistribution.leaderTimeoutFee;
+  const leaderPerRound = params.feesDistribution.leaderTimeunitsAllocation;
   const validatorsPerRound =
-    params.feesDistribution.validatorsTimeoutFee * validators;
-  const rollupPerRound = params.feesDistribution.rollupUnifiedBudgetPerRound;
-  const timeoutFees = BigInt(rounds) * (leaderPerRound + validatorsPerRound);
-  const rollupBudget = BigInt(rounds) * rollupPerRound;
-  const appealBudget =
-    params.feesDistribution.appealRounds *
-    (leaderPerRound + validatorsPerRound + rollupPerRound);
+    params.feesDistribution.validatorTimeunitsAllocation * validators;
+  const timeunitFees = BigInt(rounds) * (leaderPerRound + validatorsPerRound);
+  const timeoutFees =
+    params.feesDistribution.maxPriceGenPerTimeUnit > 0n
+      ? timeunitFees * params.feesDistribution.maxPriceGenPerTimeUnit
+      : timeunitFees;
+  const leaderRounds = params.feesDistribution.rotations.reduce(
+    (sum, rotations) => sum + rotations + 1n,
+    params.feesDistribution.appealRounds,
+  );
+  const rollupBudget =
+    params.feesDistribution.executionBudgetPerRound * leaderRounds;
+  const appealBudget = 0n;
   const messageBudget = params.feesDistribution.totalMessageFees;
   const totalFees = timeoutFees + rollupBudget + appealBudget + messageBudget;
 
@@ -687,8 +691,8 @@ const hashFeeConfig = (params: AddTransactionParams): string =>
   keccak256(
     abiCoder.encode(
       [
-        'tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256[],uint256)',
-        'tuple(uint256,address,bytes4,uint256,tuple(uint256,uint256,uint256,uint256,uint256[]))[]',
+        'tuple(uint256,uint256,uint256,uint256,uint256,uint256,uint256[],uint256,uint256,uint256)',
+        'tuple(uint8,bool,uint256,address,bytes32,uint256,bytes)[]',
       ],
       [
         toFeeTuple(params.feesDistribution),
@@ -795,7 +799,7 @@ export const decodeGatewayNonceResult = (result: string): string =>
 export const parseHarnessReceiptEvents = (
   logs: RpcReceiptLog[],
 ): ParsedHarnessEvent[] =>
-  logs.flatMap((log) => {
+  logs.flatMap<ParsedHarnessEvent>((log) => {
     try {
       const parsed = harnessEventsInterface.parseLog({
         data: log.data,

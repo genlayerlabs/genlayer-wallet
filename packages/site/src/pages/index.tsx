@@ -266,42 +266,50 @@ const PROFILE_PRESETS: Record<
   Partial<
     Pick<
       PrototypeForm,
-      | 'leaderTimeoutFee'
-      | 'validatorsTimeoutFee'
+      | 'leaderTimeunitsAllocation'
+      | 'validatorTimeunitsAllocation'
       | 'appealRounds'
-      | 'rollupUnifiedBudgetPerRound'
+      | 'executionBudgetPerRound'
       | 'totalMessageFees'
       | 'rotations'
       | 'maxPriceGenPerTimeUnit'
+      | 'storageFeeMaxGasPrice'
+      | 'receiptFeeMaxGasPrice'
     >
   >
 > = {
   low: {
-    leaderTimeoutFee: '0.0005',
-    validatorsTimeoutFee: '0.001',
+    leaderTimeunitsAllocation: '50',
+    validatorTimeunitsAllocation: '100',
     appealRounds: '0',
-    rollupUnifiedBudgetPerRound: '0.004',
+    executionBudgetPerRound: '0.004',
     totalMessageFees: '0',
     rotations: '0',
-    maxPriceGenPerTimeUnit: '110',
+    maxPriceGenPerTimeUnit: '0.00000011',
+    storageFeeMaxGasPrice: '22',
+    receiptFeeMaxGasPrice: '22',
   },
   standard: {
-    leaderTimeoutFee: '0.001',
-    validatorsTimeoutFee: '0.002',
+    leaderTimeunitsAllocation: '100',
+    validatorTimeunitsAllocation: '200',
     appealRounds: '1',
-    rollupUnifiedBudgetPerRound: '0.01',
+    executionBudgetPerRound: '0.01',
     totalMessageFees: '0.02',
     rotations: '0,1',
-    maxPriceGenPerTimeUnit: '120',
+    maxPriceGenPerTimeUnit: '0.00000012',
+    storageFeeMaxGasPrice: '24',
+    receiptFeeMaxGasPrice: '24',
   },
   high: {
-    leaderTimeoutFee: '0.002',
-    validatorsTimeoutFee: '0.004',
+    leaderTimeunitsAllocation: '200',
+    validatorTimeunitsAllocation: '400',
     appealRounds: '2',
-    rollupUnifiedBudgetPerRound: '0.025',
+    executionBudgetPerRound: '0.025',
     totalMessageFees: '0.05',
     rotations: '0,1,1',
-    maxPriceGenPerTimeUnit: '150',
+    maxPriceGenPerTimeUnit: '0.00000015',
+    storageFeeMaxGasPrice: '30',
+    receiptFeeMaxGasPrice: '30',
   },
   custom: {},
 };
@@ -873,49 +881,75 @@ const Index = () => {
                 />
               </Field>
               <Field>
-                Leader timeout fee
+                Leader time units (seconds)
                 <Input
-                  value={form.leaderTimeoutFee}
+                  value={form.leaderTimeunitsAllocation}
                   onChange={(changeEvent) => {
                     updateForm('profile', 'custom');
-                    updateForm('leaderTimeoutFee', changeEvent.target.value);
+                    updateForm('leaderTimeunitsAllocation', changeEvent.target.value);
                   }}
                 />
               </Field>
               <Field>
-                Validator timeout fee
+                Validator time units (seconds)
                 <Input
-                  value={form.validatorsTimeoutFee}
+                  value={form.validatorTimeunitsAllocation}
                   onChange={(changeEvent) => {
                     updateForm('profile', 'custom');
                     updateForm(
-                      'validatorsTimeoutFee',
+                      'validatorTimeunitsAllocation',
                       changeEvent.target.value,
                     );
                   }}
                 />
               </Field>
               <Field>
-                Rollup budget / round
+                Execution budget / round (GEN)
                 <Input
-                  value={form.rollupUnifiedBudgetPerRound}
+                  value={form.executionBudgetPerRound}
                   onChange={(changeEvent) => {
                     updateForm('profile', 'custom');
                     updateForm(
-                      'rollupUnifiedBudgetPerRound',
+                      'executionBudgetPerRound',
                       changeEvent.target.value,
                     );
                   }}
                 />
               </Field>
               <Field>
-                Max GEN/time-unit
+                Max GEN/time-unit cap (price x 1.2 placeholder)
                 <Input
                   value={form.maxPriceGenPerTimeUnit}
                   onChange={(changeEvent) => {
                     updateForm('profile', 'custom');
                     updateForm(
                       'maxPriceGenPerTimeUnit',
+                      changeEvent.target.value,
+                    );
+                  }}
+                />
+              </Field>
+              <Field>
+                Storage gas cap (gwei, price x 1.2 placeholder)
+                <Input
+                  value={form.storageFeeMaxGasPrice}
+                  onChange={(changeEvent) => {
+                    updateForm('profile', 'custom');
+                    updateForm(
+                      'storageFeeMaxGasPrice',
+                      changeEvent.target.value,
+                    );
+                  }}
+                />
+              </Field>
+              <Field>
+                Receipt gas cap (gwei, price x 1.2 placeholder)
+                <Input
+                  value={form.receiptFeeMaxGasPrice}
+                  onChange={(changeEvent) => {
+                    updateForm('profile', 'custom');
+                    updateForm(
+                      'receiptFeeMaxGasPrice',
                       changeEvent.target.value,
                     );
                   }}
@@ -959,11 +993,11 @@ const Index = () => {
                     />
                   </FullField>
                   <Field>
-                    Selector
+                    Call key (bytes32)
                     <Input
-                      value={form.messageSelector}
+                      value={form.messageCallKey}
                       onChange={(changeEvent) =>
-                        updateForm('messageSelector', changeEvent.target.value)
+                        updateForm('messageCallKey', changeEvent.target.value)
                       }
                     />
                   </Field>
