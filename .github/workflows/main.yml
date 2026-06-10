@@ -2,7 +2,7 @@ name: Main
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'v*-dev']
   pull_request:
 
 jobs:
