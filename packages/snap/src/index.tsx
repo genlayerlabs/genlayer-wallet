@@ -30,15 +30,17 @@ const getCurrentTransactionSummary = async () => {
 const toJsonTransactionSummary = (summary: ParsedGenLayerTransaction) =>
   JSON.parse(JSON.stringify(summary)) as ParsedGenLayerTransaction;
 
+const NUMERIC_VALUE_PATTERN = /^(0x[0-9a-fA-F]+|\d+)$/u;
+
 const parseTransactionValue = (value: unknown): bigint | undefined => {
   if (typeof value !== 'string') {
     return undefined;
   }
-  try {
-    return BigInt(value);
-  } catch {
+  const trimmed = value.trim();
+  if (!NUMERIC_VALUE_PATTERN.test(trimmed)) {
     return undefined;
   }
+  return BigInt(trimmed);
 };
 
 const withTransactionValue = (
