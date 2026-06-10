@@ -33,12 +33,7 @@ const formatWeiToGen = (value: string | undefined): string => {
 
   const fractionText = fraction.toString().padStart(18, '0');
   const significantDigits =
-    whole > 0n
-      ? 6
-      : Math.max(
-          6,
-          fractionText.search(/[1-9]/u) + 6,
-        );
+    whole > 0n ? 6 : Math.max(6, fractionText.search(/[1-9]/u) + 6);
   const trimmedFraction = fractionText
     .slice(0, Math.min(significantDigits, 18))
     .replace(/0+$/u, '');

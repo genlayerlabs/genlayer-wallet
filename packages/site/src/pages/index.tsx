@@ -886,7 +886,10 @@ const Index = () => {
                   value={form.leaderTimeunitsAllocation}
                   onChange={(changeEvent) => {
                     updateForm('profile', 'custom');
-                    updateForm('leaderTimeunitsAllocation', changeEvent.target.value);
+                    updateForm(
+                      'leaderTimeunitsAllocation',
+                      changeEvent.target.value,
+                    );
                   }}
                 />
               </Field>
