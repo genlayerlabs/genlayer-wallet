@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>transaction-kit demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../dist/styles.css" />
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; gap: 32px;
+         background: #07090d; padding: 40px; box-sizing: border-box;
+         grid-template-columns: repeat(auto-fit, minmax(420px, max-content)); justify-content: center; }
+</style>
+<script type="importmap">
+{ "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+} }
+</script>
+</head>
+<body>
+<div id="review"></div>
+<div id="done"></div>
+<div id="undetermined"></div>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { GenLayerTransactionPanel, createMockKit } from '../dist/index.js';
+
+const h = React.createElement;
+const tx = { kind: 'write', address: '0x' + '12'.repeat(20), method: 'place_bet' };
+
+createRoot(document.getElementById('review')).render(
+  h(GenLayerTransactionPanel, { kit: createMockKit({ delays: { estimate: 50 } }), tx,
+    network: 'dev-env · localhost', snapState: 'verified' }));
+
+createRoot(document.getElementById('done')).render(
+  h(GenLayerTransactionPanel, { kit: createMockKit({ delays: { estimate: 30, submit: 40, step: 40 } }),
+    tx: { kind: 'deploy', code: 'class C: pass' }, network: 'studionet' }));
+
+createRoot(document.getElementById('undetermined')).render(
+  h(GenLayerTransactionPanel, { kit: createMockKit({ delays: { estimate: 30, submit: 40, step: 40 },
+    outcome: { statusName: 'UNDETERMINED', executionResultName: 'FINISHED_WITH_RETURN' } }),
+    tx, network: 'testnet-asimov', theme: 'light' }));
+</script>
+</body>
+</html>
