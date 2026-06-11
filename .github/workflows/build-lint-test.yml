@@ -85,6 +85,12 @@ jobs:
           path: ./packages/snap/dist
           key: snap-${{ runner.os }}-${{ github.sha }}
       - run: yarn install --immutable
+      - name: Build snap if cache is empty
+        shell: bash
+        run: |
+          if [[ ! -f packages/snap/dist/bundle.js ]]; then
+            yarn workspace genlayer-wallet-plugin build
+          fi
       - name: Run e2e tests
         run: yarn workspace genlayer-wallet-plugin run test
       - name: Require clean working directory
