@@ -1,5 +1,10 @@
 # How to Connect to GenLayer Localnet via MetaMask
 
+## Branching
+
+See [docs/BRANCHING.md](docs/BRANCHING.md) for the release-train model used by
+this repo.
+
 Follow these steps to add the GenLayer Localnet as a custom network in MetaMask:
 
 ## Step 1: Open MetaMask
