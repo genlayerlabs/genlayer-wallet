@@ -60,6 +60,8 @@ export type ParsedGenLayerTransaction = {
   methodName: string;
   kind: TransactionKind;
   txId?: string | undefined;
+  totalValue?: string | undefined;
+  feeDeposit?: string | undefined;
   userValue?: string | undefined;
   validUntil?: string | undefined;
   saltNonce?: string | undefined;
@@ -358,11 +360,15 @@ const getMessageAllocationMode = (
 };
 
 const decodeMethodNameFromCalldata = (txCalldata: BytesLike): string => {
-  const decodedData = decodeRlp(txCalldata);
-  const bytes = getBytes(decodedData[0] as BytesLike);
-  const decoded = abi.calldata.decode(bytes) as Map<string, unknown>;
-  const method = decoded?.get('method');
-  return typeof method === 'string' ? method : 'unknown';
+  try {
+    const decodedData = decodeRlp(txCalldata);
+    const bytes = getBytes(decodedData[0] as BytesLike);
+    const decoded = abi.calldata.decode(bytes) as Map<string, unknown>;
+    const method = decoded?.get('method');
+    return typeof method === 'string' ? method : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 };
 
 const parseFeeManagementTransaction = (

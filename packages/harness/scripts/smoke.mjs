@@ -7,9 +7,11 @@ import {
   Interface,
   JsonRpcProvider,
   Wallet,
+  encodeRlp,
   hexlify,
   keccak256,
   parseEther,
+  parseUnits,
   toUtf8Bytes,
 } from 'ethers';
 
@@ -53,32 +55,33 @@ const params = {
   saltNonce: 1n,
   userValue: parseEther('0.01'),
   feesDistribution: {
-    leaderTimeoutFee: parseEther('0.001'),
-    validatorsTimeoutFee: parseEther('0.002'),
+    leaderTimeunitsAllocation: 100n,
+    validatorTimeunitsAllocation: 200n,
     appealRounds: 1n,
-    rollupUnifiedBudgetPerRound: parseEther('0.01'),
-    rollupUnifiedConsumed: 0n,
+    executionBudgetPerRound: parseEther('0.01'),
+    executionConsumed: 0n,
     totalMessageFees: parseEther('0.02'),
     rotations: [0n, 1n],
-    maxPriceGenPerTimeUnit: 120n,
+    maxPriceGenPerTimeUnit: parseEther('0.00000012'),
+    storageFeeMaxGasPrice: parseUnits('24', 'gwei'),
+    receiptFeeMaxGasPrice: parseUnits('24', 'gwei'),
   },
-  txCalldata: hexlify(
-    toUtf8Bytes(JSON.stringify({ method: 'ask_llm', args: [], prototype: true })),
-  ),
+  txCalldata: encodeRlp([
+    hexlify(
+      toUtf8Bytes(JSON.stringify({ method: 'ask_llm', args: [], prototype: true })),
+    ),
+  ]),
   messageAllocations: [
     {
+      messageType: 1,
+      onAcceptance: true,
       parentIndex:
         0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn,
       recipient: '0x2222222222222222222222222222222222222222',
-      functionSelector: '0x00000000',
+      callKey:
+        '0x0000000000000000000000000000000000000000000000000000000000000000',
       budget: parseEther('0.02'),
-      feeParams: {
-        leaderTimeunitsAllocation: parseEther('0.001'),
-        validatorTimeunitsAllocation: parseEther('0.002'),
-        appealRounds: 1n,
-        rollupUnifiedBudgetPerRound: parseEther('0.005'),
-        rotations: [0n],
-      },
+      feeParams: '0x',
     },
   ],
 };
@@ -121,7 +124,7 @@ const parseKnownEvents = (receipt) =>
     }
   });
 
-const maxTotalFee = parseEther('0.083');
+const maxTotalFee = parseEther('0.061');
 const msgValue = params.userValue + maxTotalFee;
 
 const directTx = await shim.addTransaction(params, { value: msgValue });

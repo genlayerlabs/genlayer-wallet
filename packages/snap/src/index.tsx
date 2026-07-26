@@ -30,9 +30,45 @@ const getCurrentTransactionSummary = async () => {
 const toJsonTransactionSummary = (summary: ParsedGenLayerTransaction) =>
   JSON.parse(JSON.stringify(summary)) as ParsedGenLayerTransaction;
 
+const NUMERIC_VALUE_PATTERN = /^(0x[0-9a-fA-F]+|\d+)$/u;
+
+const parseTransactionValue = (value: unknown): bigint | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!NUMERIC_VALUE_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+  return BigInt(trimmed);
+};
+
+const withTransactionValue = (
+  summary: ParsedGenLayerTransaction,
+  value: unknown,
+): ParsedGenLayerTransaction => {
+  const totalValue = parseTransactionValue(value);
+  if (totalValue === undefined) {
+    return summary;
+  }
+
+  const userValue =
+    summary.userValue === undefined ? 0n : BigInt(summary.userValue);
+  const feeDeposit = totalValue > userValue ? totalValue - userValue : 0n;
+
+  return {
+    ...summary,
+    totalValue: totalValue.toString(),
+    feeDeposit: feeDeposit.toString(),
+  };
+};
+
 export const onTransaction: OnTransactionHandler = async ({ transaction }) => {
   const storageKey = getTransactionStorageKey(transaction);
-  const transactionSummary = parseGenLayerTransaction(transaction.data ?? '');
+  const transactionSummary = withTransactionValue(
+    parseGenLayerTransaction(transaction.data ?? ''),
+    transaction.value,
+  );
   const jsonTransactionSummary = toJsonTransactionSummary(transactionSummary);
   await StateManager.set('currentStorageKey', storageKey);
   await StateManager.set(

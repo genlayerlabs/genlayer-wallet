@@ -5,30 +5,26 @@ contract GenLayerFeeShim {
     uint256 public transactionCount;
 
     struct FeesDistribution {
-        uint256 leaderTimeoutFee;
-        uint256 validatorsTimeoutFee;
-        uint256 appealRounds;
-        uint256 rollupUnifiedBudgetPerRound;
-        uint256 rollupUnifiedConsumed;
-        uint256 totalMessageFees;
-        uint256[] rotations;
-        uint256 maxPriceGenPerTimeUnit;
-    }
-
-    struct MessageFeeParams {
         uint256 leaderTimeunitsAllocation;
         uint256 validatorTimeunitsAllocation;
         uint256 appealRounds;
-        uint256 rollupUnifiedBudgetPerRound;
+        uint256 executionBudgetPerRound;
+        uint256 executionConsumed;
+        uint256 totalMessageFees;
         uint256[] rotations;
+        uint256 maxPriceGenPerTimeUnit;
+        uint256 storageFeeMaxGasPrice;
+        uint256 receiptFeeMaxGasPrice;
     }
 
     struct MessageFeeAllocationNode {
+        uint8 messageType;
+        bool onAcceptance;
         uint256 parentIndex;
         address recipient;
-        bytes4 functionSelector;
+        bytes32 callKey;
         uint256 budget;
-        MessageFeeParams feeParams;
+        bytes feeParams;
     }
 
     struct AddTransactionParams {
