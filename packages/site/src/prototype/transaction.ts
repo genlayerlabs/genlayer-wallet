@@ -161,6 +161,27 @@ export const ROOT_ALLOCATION_PARENT = BigInt(
   '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
 );
 
+const VALIDATORS_PER_ROUND = [
+  5n,
+  7n,
+  11n,
+  13n,
+  23n,
+  25n,
+  47n,
+  49n,
+  95n,
+  97n,
+  191n,
+  193n,
+  383n,
+  385n,
+  767n,
+  769n,
+  1535n,
+  1537n,
+] as const;
+
 export const CONSENSUS_MAIN_WITH_FEES_ABI = [
   {
     inputs: [
@@ -642,11 +663,53 @@ export const buildMessageAllocations = (
 
 export const estimateFees = (params: AddTransactionParams): FeeEstimate => {
   const rounds = Number(params.feesDistribution.rotations[0] ?? 0n) + 1;
-  const validators = params.numOfInitialValidators;
   const leaderPerRound = params.feesDistribution.leaderTimeunitsAllocation;
-  const validatorsPerRound =
-    params.feesDistribution.validatorTimeunitsAllocation * validators;
-  const timeunitFees = BigInt(rounds) * (leaderPerRound + validatorsPerRound);
+  const validatorPerRound =
+    params.feesDistribution.validatorTimeunitsAllocation;
+  const startIndex = VALIDATORS_PER_ROUND.findIndex(
+    (validators) => validators === params.numOfInitialValidators,
+  );
+  const appealRounds = Number(params.feesDistribution.appealRounds);
+  if (
+    startIndex < 0 ||
+    params.feesDistribution.appealRounds !==
+      BigInt(params.feesDistribution.rotations.length - 1) ||
+    startIndex + appealRounds * 2 >= VALIDATORS_PER_ROUND.length
+  ) {
+    throw new Error('Invalid fee validator schedule');
+  }
+
+  const initialValidators = VALIDATORS_PER_ROUND[startIndex];
+  if (initialValidators === undefined) {
+    throw new Error('Invalid fee validator schedule');
+  }
+  let timeunitFees =
+    BigInt(rounds) * (leaderPerRound + initialValidators * validatorPerRound);
+  let rotationsIndex = 1;
+  let rotationsThisRound = 1n;
+  for (let offset = 1; offset <= appealRounds * 2; offset += 1) {
+    if (
+      offset % 2 === 0 &&
+      rotationsIndex < params.feesDistribution.rotations.length
+    ) {
+      const configuredRotations =
+        params.feesDistribution.rotations[rotationsIndex];
+      if (configuredRotations === undefined) {
+        throw new Error('Invalid fee validator schedule');
+      }
+      rotationsThisRound = configuredRotations + 1n;
+      rotationsIndex += 1;
+    } else if (offset % 2 === 1) {
+      rotationsThisRound = 1n;
+    }
+    const roundValidators = VALIDATORS_PER_ROUND[startIndex + offset];
+    if (roundValidators === undefined) {
+      throw new Error('Invalid fee validator schedule');
+    }
+    timeunitFees +=
+      rotationsThisRound *
+      (leaderPerRound + roundValidators * validatorPerRound);
+  }
   const timeoutFees =
     params.feesDistribution.maxPriceGenPerTimeUnit > 0n
       ? timeunitFees * params.feesDistribution.maxPriceGenPerTimeUnit
