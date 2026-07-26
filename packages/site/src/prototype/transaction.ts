@@ -500,11 +500,11 @@ const parseGen = (value: string): bigint => {
 };
 
 const parseUint = (value: string): bigint => {
-  const parsed = Number.parseInt(value.trim() || '0', 10);
-  if (!Number.isFinite(parsed) || parsed < 0) {
+  const normalized = value.trim() || '0';
+  if (!/^\d+$/u.test(normalized)) {
     return 0n;
   }
-  return BigInt(parsed);
+  return BigInt(normalized);
 };
 
 const parseGwei = (value: string): bigint => {
